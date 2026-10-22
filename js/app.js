@@ -18,7 +18,18 @@
       { unit_id: 'BOX-02', unit_name: 'Playbox PS4 #2 - VIP', specs: '1 Unit Playbox PS4, 2 Stik Ori, HDMI-USB-Power, Hard Disk 1 TB', current_status: 'Tersedia', available_at: '', image_url: 'img/unit-2.svg' }],
     promos: [], schedule: [], demo: false, offline: true
   };
-  var pub = Store.get('c:pub', null) && Store.get('c:pub', null).data || FALLBACK;
+  /** Data dari server/cache bisa rusak atau berasal dari versi lama; lengkapi agar tampilan tidak pernah kosong. */
+  function normPub(d) {
+    if (!d || typeof d !== 'object' || Array.isArray(d)) return null;
+    if (!Array.isArray(d.units) || !Array.isArray(d.packages)) return null;   // bentuk tidak dikenal = jangan dipakai
+    var o = Object.assign({}, d);
+    ['units', 'packages', 'games', 'schedule', 'promos'].forEach(function (k) { if (!Array.isArray(o[k])) o[k] = []; });
+    if (!o.settings || typeof o.settings !== 'object') o.settings = {};
+    return o;
+  }
+  var CKEY = 'c:pub2';
+  Store.del && Store.del('c:pub');   // cache versi lama dibuang
+  var pub = (function () { var c = Store.get(CKEY, null); return (c && normPub(c.data)) || normPub(FALLBACK) || FALLBACK; })();
   var S = function (k, d) { var v = pub.settings && pub.settings[k]; return v === undefined || v === '' ? (d === undefined ? '' : d) : v; };
   var waNum = function () { return String(S('whatsapp_admin', CFG.WA_ADMIN)).replace(/\D/g, ''); };
   var waShow = function () { var n = waNum(); return n.indexOf('62') === 0 ? '0' + n.slice(2) : n; };
@@ -39,6 +50,7 @@
   /* ------------------------------------------------------------------ data publik */
   var listeners = [];
   function applyPub(d, fromCache) {
+    d = normPub(d); if (!d) throw new Error('Data publik tidak lengkap');
     pub = d; K.pub = d;
     if (d.settings && d.settings.timezone) Time.tz = d.settings.timezone;
     if (d.serverTime && !fromCache) Time.sync(d.serverTime);
@@ -63,11 +75,10 @@
     else { root.removeProperty('--gold'); root.removeProperty('--gold-deep'); }
     var off = S('member_enabled', 'YA') === 'TIDAK';
     $$('[data-nav=akun]').forEach(function (a) { a.hidden = off; });
-    var bb = $('.bottom-bar'); if (bb) bb.classList.toggle('four', off);
     var meta = $('meta[name=description]'); if (meta) meta.setAttribute('content', S('hero_description', '').slice(0, 155) || meta.getAttribute('content'));
   }
   function loadPub(force) {
-    return K.swr('c:pub', 'publicData', {}, applyPub, {
+    return K.swr(CKEY, 'publicData', {}, applyPub, {
       force: force, fresh: CFG.CACHE_FRESH_MS,
       onError: function (res) { if (res.code === 'NOAPI') { applyPub(Object.assign({}, FALLBACK), true); } else { var r = $('#home-root'); if (r && !r.dataset.ready) r.innerHTML = errBox(res.message); } }
     });
@@ -164,6 +175,12 @@
     social: function (s) { return secHead(s, '<a class="btn sm" href="#/kontak">Lihat semua ' + ic('arrowR') + '</a>') + socialHtml(); }
   };
   function renderHome() {
+    try { renderHome_(); } catch (e) {
+      console.error(e); Store.del(CKEY);
+      var r = $('#home-root'); if (r) { r.dataset.ready = '1'; r.innerHTML = errBox('Tampilan beranda gagal dimuat. Data tersimpan dibersihkan; coba lagi.'); }
+    }
+  }
+  function renderHome_() {
     var root = $('#home-root'); if (!root) return; root.dataset.ready = '1';
     var title = esc(S('hero_title', 'SEWA PLAYBOX PS4')).replace(/(playbox\s*ps4)/i, '<em>$1</em>');
     var ann = S('timeline_announcement'), hero = S('hero_banner_url');
@@ -501,14 +518,24 @@
   }
 
   /* ================================================================== PENDAFTARAN HALAMAN & BOOT */
-  Router.add('home', { el: 'pg-home', title: 'Sewa Playbox PS4', init: function (el) {
+  function initHome(el) {
+    if (el.dataset.hinit) return; el.dataset.hinit = '1';
     el.addEventListener('input', function (e) { if (e.target.id === 'g-q') { gameQ = e.target.value; gameAll = false; renderGames(); } });
     el.addEventListener('click', function (e) {
       var c = e.target.closest('[data-g]'); if (c) { gameG = c.getAttribute('data-g'); gameAll = false; $$('#g-chips .chip').forEach(function (b) { b.setAttribute('aria-pressed', b === c); }); renderGames(); }
       if (e.target.closest('[data-allg]')) { gameAll = true; renderGames(); }
     });
     renderHome();
-  } });
+  }
+  Router.add('home', { el: 'pg-home', title: 'Sewa Playbox PS4', init: initHome });
+  /** Menu Paket: halaman beranda yang langsung menggulir ke bagian paket sewa. */
+  var wantPaket = false;
+  function scrollPaket() {
+    if (!wantPaket || Router.cur !== 'paket') return;
+    var t = $('[data-sec=packages]') || $('[data-sec=avail]'); if (!t) return;
+    wantPaket = false; t.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  }
+  Router.add('paket', { el: 'pg-home', title: 'Paket Sewa', init: initHome, show: function () { wantPaket = true; setTimeout(scrollPaket, 80); } });
   Router.add('pesan', { el: 'pg-pesan', title: 'Pesan Sewa', init: function (el) { bindPesan(el); }, show: function (el, args) {
     if (!B || (args.length && (args[0] || args[1]))) { var keepGames = B && B.games; B = newB(args); if (keepGames && !args.length) B.games = keepGames; }
     if (args[0] === '' && !args[1]) { /* tanpa pilihan */ }
@@ -533,7 +560,7 @@
   Router.hooks.push(function (r) { if (r.name !== 'cek') stopPoll(); if (r.name !== 'admin' && K.Admin && K.Admin.leave) K.Admin.leave(); });
   listeners.push(function () {
     var cur = Router.cur;
-    if (cur === 'home' || $('#home-root').dataset.ready) renderHome();
+    if (cur === 'home' || cur === 'paket' || $('#home-root').dataset.ready) { renderHome(); if (cur === 'paket') setTimeout(scrollPaket, 60); }
     if (cur === 'pesan' && B && !B.busy) { var active = document.activeElement; if (!(active && /INPUT|TEXTAREA/.test(active.tagName))) renderPesan(); else refreshSummary(); }
     if (cur === 'admin' && K.Admin && K.Admin.pubChanged) K.Admin.pubChanged();
     if (cur === 'kontak') renderKontak();
@@ -554,7 +581,6 @@
 
   // prefetch modul admin saat disentuh/di-hover & saat idle bila sudah pernah login
   var warm = function () { loadAdmin().catch(function () { /* diam */ }); };
-  $('#admin-link').addEventListener('pointerenter', warm, { once: true }); $('#admin-link').addEventListener('touchstart', warm, { once: true, passive: true });
   K.Auth.load(); K.Mem.load();
   if (K.Auth.isAdmin()) (w.requestIdleCallback || setTimeout)(warm, 800);
 
@@ -563,7 +589,7 @@
   K.App = { loadPub: loadPub, pub: function () { return pub; }, waLink: waLink, S: S, Orders: Orders, durLabel: durLabel, applyPub: applyPub, loyalty: loyalty, promoLabel: promoLabel, promoDisc: promoDisc, fmtYmd: fmtYmd, loyaltyDots: loyaltyDots, sections: sections, SEC_DEF: SEC_DEF, SEC_ORDER: SEC_ORDER, pkgById: pkgById, rerenderPesan: function () { if (B && !B.busy) renderPesan(); }, rerenderHome: function () { if ($('#home-root').dataset.ready) renderHome(); } };
   Router.start();
   loadPub(false);
-  document.addEventListener('visibilitychange', function () { if (!document.hidden && Date.now() - (Store.get('c:pub', {}) || {}).t > 120000) loadPub(true); });
+  document.addEventListener('visibilitychange', function () { if (!document.hidden && Date.now() - (Store.get(CKEY, {}) || {}).t > 120000) loadPub(true); });
   w.addEventListener('kgb:member-expired', function () { UI.toast('Sesi akun berakhir. Silakan masuk lagi.', 'warn'); if (B) { B.promo = undefined; B.voucher = false; } if (Router.cur === 'akun' || Router.cur === 'pesan') Router.render(); });
   w.addEventListener('kgb:auth-expired', function () { UI.toast('Sesi admin berakhir. Silakan masuk lagi.', 'warn'); if (Router.cur === 'admin') Router.render(); });
 })(window);

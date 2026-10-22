@@ -20,7 +20,7 @@
   }
   function navLabel() {
     var nm = Mem.isIn() && Mem.me ? String(Mem.me.name || '').split(' ')[0] : '';
-    $$('[data-nav=akun]').forEach(function (a) { var sp = $('span', a); if (sp) sp.textContent = nm || 'Akun'; });
+    $$('[data-nav=akun]').forEach(function (a) { var sp = $('span', a); if (sp) sp.textContent = nm || 'Akun'; a.classList.toggle('is-in', !!nm); a.setAttribute('aria-label', nm ? 'Akun ' + nm : 'Akun'); a.title = nm ? 'Akun: ' + nm : 'Akun'; });
   }
   function login(res, msg) {
     Mem.save({ token: res.data.token, expiresAt: res.data.expiresAt, me: res.data.me }); loadLocal(); navLabel();

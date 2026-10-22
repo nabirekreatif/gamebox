@@ -165,14 +165,15 @@
     opt = opt || {};
     var fresh = opt.fresh == null ? (CFG.CACHE_FRESH_MS || 45000) : opt.fresh;
     var c = Store.get(key, null);
-    if (c && c.data !== undefined) { try { render(c.data, true); } catch (e) { console.error(e); } }
-    if (c && !opt.force && Date.now() - c.t < fresh) return Promise.resolve({ success: true, data: c.data, cached: true });
+    var bad = false;
+    if (c && c.data !== undefined) { try { render(c.data, true); } catch (e) { bad = true; console.error(e); Store.del(key); } }
+    if (c && !bad && !opt.force && Date.now() - c.t < fresh) return Promise.resolve({ success: true, data: c.data, cached: true });
     return call(action, data, opt).then(function (res) {
       if (res.success) {
         var hh = hashStr(JSON.stringify(res.data));
         Store.set(key, { t: Date.now(), h: hh, data: res.data });
-        if (!c || c.h !== hh) { try { render(res.data, false); } catch (e) { console.error(e); } }
-      } else if (opt.onError && (!c || opt.alwaysError)) opt.onError(res);
+        if (!c || bad || c.h !== hh) { try { render(res.data, false); } catch (e) { console.error(e); Store.del(key); if (opt.onError) opt.onError({ success: false, message: 'Data dari server tidak dapat ditampilkan.' }); } }
+      } else if (opt.onError && (!c || bad || opt.alwaysError)) opt.onError(res);
       return res;
     });
   }

@@ -155,6 +155,14 @@ Menu lain: **Unit** (nama, spesifikasi, unggah foto), **Katalog** (paket, game, 
 
 **Catatan jujur:** pendaftaran **tidak memakai kode OTP**, jadi nomor WhatsApp tidak diverifikasi. Seseorang bisa mendaftar dengan nomor orang lain. Dampaknya terbatas (akun hanya menyimpan riwayat sewa dan voucher), tetapi pantau daftar member. Pelanggan yang lupa password meminta reset ke admin lewat WhatsApp. Voucher hanya terhitung dari sewa yang dipesan saat **sudah masuk akun** dan berstatus **Selesai**.
 
+## Tahap 6c — Akses admin, menu, dan pasang aplikasi (PWA)
+
+- **Akses admin:** tidak ada lagi ikon gembok di header. Buka alamat `https://USERNAME.github.io/kings-gaming-box/#/admin` (simpan sebagai bookmark). Pelanggan tidak melihat jalan masuk admin.
+- **Menu:** ikon **Akun** kini di pojok kanan header, di sebelah ikon tema (titik hijau muncul bila sudah masuk). Di menu bawah (HP) dan menu atas (desktop), posisi Akun digantikan **Paket**, yang membuka beranda lalu menggulir ke daftar paket sewa.
+- **Pasang aplikasi:** bila browser mendukung, muncul tombol ikon unduh di header. Ketuk, lalu pilih **Pasang/Install**. Setelah terpasang (atau saat dibuka dari ikon di layar utama), tombol otomatis hilang. Di iPhone/iPad tombol menampilkan petunjuk **Bagikan → Tambah ke Layar Utama** (Apple tidak mengizinkan tombol instal otomatis). Android/Chrome dan Edge desktop memakai dialog instal bawaan.
+- Berkas PWA: `manifest.webmanifest`, `sw.js`, dan ikon di `img/icon-*.png`. Semuanya ikut di ZIP; tidak ada yang perlu diisi. Service worker memakai strategi **jaringan dulu**, jadi pembaruan yang Anda push langsung terpakai, dan halaman tetap bisa dibuka bila sinyal putus. Panggilan ke backend tidak pernah disimpan.
+- Bila setelah update tampilan lama masih muncul: tutup semua tab situs, buka lagi, atau Ctrl+Shift+R.
+
 ## Tahap 7 — Notifikasi WhatsApp (Fonnte) + Email + Kontak (CRM)
 
 1. Daftar di <https://fonnte.com>, hubungkan nomor WhatsApp pengirim (scan QR), salin **token** perangkat.
@@ -197,6 +205,7 @@ Data contoh bertanda `is_demo`; data asli (unit/pengaturan yang sudah Anda ubah,
 |---|---|
 | Situs 404 di GitHub Pages | `git init` dijalankan di folder yang salah. Pindah ke `kings-gaming-box-frontend` (yang berisi `index.html`), `git init`, `git add .`, `git commit`, `git push -u origin main --force` |
 | Halaman tanpa warna / 404 CSS-JS | Berkas rata di root. Ulangi lewat terminal seperti Tahap 4 |
+| Beranda kosong setelah refresh | Penyebab umum: data tersimpan di browser dari versi lama/rusak. Sudah diperbaiki: data rusak otomatis dibuang dan diambil ulang, dan bila gagal muncul pesan dengan tombol **Coba lagi**. Setelah update, cukup muat ulang sekali |
 | Banner "backend belum tersambung" | `API_URL` di `js/config.js` masih kosong atau salah (harus berakhiran `/exec`) |
 | "Sesi berakhir" / izin ditolak | Deployment bukan *Execute as Me / Anyone*, atau lupa **New version** setelah ubah kode |
 | Perubahan kode backend tidak terasa | Deploy → Manage deployments → Edit → **New version** → Deploy |
@@ -209,7 +218,7 @@ Data contoh bertanda `is_demo`; data asli (unit/pengaturan yang sudah Anda ubah,
 
 ## Batasan yang perlu Anda ketahui
 
-- Aplikasi sudah diuji lengkap di lingkungan simulasi (275 pemeriksaan backend, 85 pemeriksaan akun/promo/voucher, dan 93 pemeriksaan browser di ukuran HP dan desktop). **Yang baru terbukti setelah dicoba di akun Anda:** izin dan kuota Google sebenarnya, tombol Login Google, pengiriman Fonnte, dan batas ukuran Sheets nyata.
+- Aplikasi sudah diuji lengkap di lingkungan simulasi (275 pemeriksaan backend, 85 pemeriksaan akun/promo/voucher, dan 111 pemeriksaan browser di ukuran HP dan desktop). **Yang baru terbukti setelah dicoba di akun Anda:** izin dan kuota Google sebenarnya, tombol Login Google, pengiriman Fonnte, dan batas ukuran Sheets nyata.
 - Grafik memakai SVG buatan sendiri (bukan Chart.js) agar ringan dan tanpa bergantung pada CDN.
 - Struk memakai **barcode** Code128; kode QR tidak disertakan.
 - Gambar unit/game contoh adalah ilustrasi vektor buatan sendiri; ganti dengan foto asli lewat panel.

@@ -508,3 +508,37 @@ a.item.hist { color: var(--ink); } a.item.hist .right { text-align: right; flex:
 .hs-row { display: grid; gap: 10px; padding: 14px; border: 1px solid var(--line); border-radius: 14px; background: var(--surface-2, transparent); }
 .hs-row .btn[disabled] { opacity: .4; }
 input[type=color].in { cursor: pointer; }
+
+/* ---- Header: akun & pasang aplikasi ---- */
+.topbar .tools { display: flex; align-items: center; gap: 4px; }
+.acc-btn { position: relative; }
+.acc-btn.is-in::after { content: ""; position: absolute; top: 9px; right: 9px; width: 9px; height: 9px; border-radius: 50%; background: var(--ok); border: 2px solid var(--bg); }
+.install-btn { color: var(--gold); background: color-mix(in srgb, var(--gold) 14%, transparent); }
+.install-btn[hidden] { display: none; }
+.home-sec { scroll-margin-top: 84px; }
+html { -webkit-text-size-adjust: 100%; text-size-adjust: 100%; }
+
+/* ---- Smartphone: huruf & komponen lebih ringkas, tanpa kartu yang meluber ---- */
+.unit > * { min-width: 0; }
+.unit .badge { white-space: normal; text-align: left; max-width: 100%; }
+@media (max-width: 480px) {
+  body { font-size: 14px; line-height: 1.5; }
+  h1 { font-size: 25px; } h2 { font-size: 19px; } h3 { font-size: 16px; } h4 { font-size: 14.5px; }
+  .small { font-size: 12.5px; } .tiny { font-size: 11.5px; }
+  .brand { font-size: 13px; } .brand small { font-size: 9.5px; }
+  .eyebrow { font-size: 10.5px; letter-spacing: .12em; }
+  .section-head p, .hero p.lead { font-size: 13.5px; }
+  .btn { font-size: 14px; } .btn.sm { font-size: 13px; } .btn.xs { font-size: 12px; }
+  .badge { font-size: 11px; padding: 2px 9px; }
+  .chip { font-size: 13px; min-height: 38px; padding: 0 13px; }
+  .field > label, .lbl { font-size: 13px; } .field .hint, .field .err { font-size: 12px; }
+  .unit { grid-template-columns: 84px minmax(0, 1fr); gap: 11px; padding: 11px; }
+  .unit h4 { font-size: 15px; } .unit .specs { font-size: 12px; margin: 2px 0 6px; }
+  .pk .dur { font-size: 15px; } .pk .price { font-size: 16px; }
+  .game .meta b { font-size: 13px; }
+  .sum-line { font-size: 13px; } .sum-total b { font-size: 20px; }
+  .mobile-total b { font-size: 16px; }
+  .bottom-bar a { font-size: 10.5px; } .bottom-bar a.cta small { font-size: 10.5px; }
+  .toast { font-size: 13px; }
+  .tbl { font-size: 13px; }
+}
