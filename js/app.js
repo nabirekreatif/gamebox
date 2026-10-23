@@ -582,7 +582,7 @@
   // prefetch modul admin saat disentuh/di-hover & saat idle bila sudah pernah login
   var warm = function () { loadAdmin().catch(function () { /* diam */ }); };
   K.Auth.load(); K.Mem.load();
-  if (K.Auth.isAdmin()) (w.requestIdleCallback || setTimeout)(warm, 800);
+  if (K.Auth.isAdmin()) setTimeout(function () { try { warm(); } catch (e) { /* tidak boleh menghentikan tampilan */ } }, 800);
 
   // pulihkan data tersimpan agar halaman langsung terisi, lalu segarkan
   K.pub = pub; K.brand = brand(); if (pub.settings && pub.settings.timezone) Time.tz = pub.settings.timezone;
