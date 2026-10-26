@@ -54,7 +54,7 @@
     pub = d; K.pub = d;
     if (d.settings && d.settings.timezone) Time.tz = d.settings.timezone;
     if (d.serverTime && !fromCache) Time.sync(d.serverTime);
-    K.brand = brand();
+    K.brand = brand(); try { document.documentElement.setAttribute('data-brand', K.brand); } catch (e) { }
     applyBranding();
     var db = $('#demo-banner'); if (db) db.hidden = !d.demo;
     listeners.forEach(function (f) { try { f(); } catch (e) { console.error(e); } });
@@ -193,8 +193,8 @@
       '</div><div>' + (hero ? '<img class="hero-banner" alt="Banner ' + esc(brand()) + '" src="' + esc(hero) + '" onerror="this.replaceWith(Object.assign(document.createElement(\'div\'),{innerHTML:KGB.ic(\'playbox\',\'hero-art\')}).firstChild)">' : ic('playbox', 'hero-art')) + '</div></div></div>' +
       (ann ? '<div class="announce" role="note">' + ic('megaphone') + '<span>' + esc(ann) + '</span></div>' : '') +
       (pub.offline ? '<div class="alert warn mt">' + ic('warn') + '<div>Menampilkan data bawaan karena backend belum tersambung. Isi <span class="code">API_URL</span> di <span class="code">js/config.js</span> agar pemesanan berfungsi.</div></div>' : '') +
-      sections().filter(function (x) { return x.show; }).map(function (x) { return '<section class="home-sec" data-sec="' + x.id + '">' + SEC[x.id](x) + '</section>'; }).join('') + footHtml();
-    renderGames(); renderSched();
+      sections().filter(function (x) { return x.show; }).map(function (x) { return '<section class="home-sec" data-sec="' + x.id + '">' + SEC[x.id](x) + '</section>'; }).join('');
+    footSync(true); renderGames(); renderSched();
   }
   function renderGames() {
     var g = $('#g-grid'); if (!g) return;
@@ -224,7 +224,28 @@
       (tt ? '<a class="soc tt" href="https://www.tiktok.com/@' + encodeURIComponent(tt) + '" target="_blank" rel="noopener"><span class="ico">' + ic('tiktok') + '</span><div><b>TikTok</b><span>@' + esc(tt) + '</span></div></a>' : '') +
       '<a class="soc mp" href="' + esc(mp) + '" target="_blank" rel="noopener"><span class="ico">' + ic('gmaps') + '</span><div><b>Lokasi</b><span>' + esc(addr) + '</span></div></a></div>';
   }
-  function footHtml() { return '<footer class="foot"><div class="row between wrap-r"><span>' + (S('footer_text') ? esc(S('footer_text')) : '&copy; ' + new Date().getFullYear() + ' ' + esc(brand()) + '. Semua hak dilindungi.') + '</span><span>' + esc(S('footer_right', 'Sewa Playbox PS4 · Nabire')) + '</span></div></footer>'; }
+  /* Footer bawaan template — satu elemen yang selalu menempel di bawah halaman yang sedang aktif.
+   * Baris hak cipta (span data-nk-copy) diisi modul lisensi nk-license.js:
+   *   belum berlisensi : "© 2026 Nabire Kreatif. Semua hak dilindungi."
+   *   sudah berlisensi : "© 2026 NAMA USAHA. by Nabirekreatif.com"
+   * Teks bawaan di bawah ini hanya cadangan bila modul lisensi tidak dipasang. */
+  var footEl = null;
+  function licDemo() { try { var st = window.NKLicense && window.NKLicense.status(); return !!st && st.mode === 'demo'; } catch (e) { return false; } }
+  function footRight() { return licDemo() ? 'www.nabirekreatif.com' : S('footer_right', 'Sewa Playbox PS4 · Nabire'); }
+  function footInner() {
+    return (S('footer_text') ? '<div class="small muted" style="margin-bottom:8px">' + esc(S('footer_text')) + '</div>' : '') +
+      '<div class="row between wrap-r"><span class="foot-copy" data-nk-copy>&copy; ' + new Date().getFullYear() + ' ' + esc(brand()) + '. Semua hak dilindungi.</span>' +
+      '<span data-nk-right>' + esc(footRight()) + '</span></div>';
+  }
+  function footSync(force) {
+    var pg = $('.page.on'); if (!pg) return;
+    if (!footEl) { footEl = document.createElement('footer'); footEl.className = 'foot'; force = true; }
+    if (footEl.parentNode !== pg || footEl.nextSibling) { pg.appendChild(footEl); force = true; }
+    if (force) {
+      footEl.innerHTML = footInner();
+      try { if (window.NKLicense && window.NKLicense.sync) window.NKLicense.sync(); } catch (e) { }
+    } else { var r = footEl.querySelector('[data-nk-right]'); if (r && r.textContent !== footRight()) r.textContent = footRight(); }
+  }
 
   /* ================================================================== PESAN */
   var B = null;   // keadaan formulir
@@ -505,7 +526,8 @@
   function renderKontak() {
     $('#kontak-root').innerHTML = '<div class="section-head" style="margin-top:6px"><div><span class="eyebrow">' + ic('pin') + 'Hubungi kami</span><h2>Lokasi &amp; Kontak</h2></div></div>' + socialHtml() +
       '<div class="card mt-lg" style="margin-top:22px"><div class="card-title">' + ic('truck') + '<h3>Layanan antar jemput</h3></div><p class="muted">Playbox diantar ke rumah, kost, cafe, atau tempat tongkrongan Anda dan diambil kembali setelah masa sewa selesai. Alamat antar diisi saat pemesanan.</p></div>' +
-      '<div class="card" style="margin-top:14px"><div class="card-title">' + ic('shield') + '<h3>Syarat singkat</h3></div><ul class="stack muted" style="padding-left:18px"><li>Wajib melampirkan foto KTP atau identitas jaminan.</li><li>Kerusakan akibat kelalaian penyewa menjadi tanggung jawab penyewa.</li><li>Perpanjangan waktu: hubungi admin sebelum masa sewa berakhir.</li></ul></div>' + footHtml();
+      '<div class="card" style="margin-top:14px"><div class="card-title">' + ic('shield') + '<h3>Syarat singkat</h3></div><ul class="stack muted" style="padding-left:18px"><li>Wajib melampirkan foto KTP atau identitas jaminan.</li><li>Kerusakan akibat kelalaian penyewa menjadi tanggung jawab penyewa.</li><li>Perpanjangan waktu: hubungi admin sebelum masa sewa berakhir.</li></ul></div>';
+    footSync(true);
   }
 
   /* ================================================================== ADMIN (dimuat saat dibutuhkan) */
@@ -585,22 +607,25 @@
   if (K.Auth.isAdmin()) setTimeout(function () { try { warm(); } catch (e) { /* tidak boleh menghentikan tampilan */ } }, 800);
 
   // pulihkan data tersimpan agar halaman langsung terisi, lalu segarkan
-  K.pub = pub; K.brand = brand(); if (pub.settings && pub.settings.timezone) Time.tz = pub.settings.timezone;
+  K.pub = pub; K.brand = brand(); try { document.documentElement.setAttribute('data-brand', K.brand); } catch (e) { } if (pub.settings && pub.settings.timezone) Time.tz = pub.settings.timezone;
   K.App = { loadPub: loadPub, pub: function () { return pub; }, waLink: waLink, S: S, Orders: Orders, durLabel: durLabel, applyPub: applyPub, loyalty: loyalty, promoLabel: promoLabel, promoDisc: promoDisc, fmtYmd: fmtYmd, loyaltyDots: loyaltyDots, sections: sections, SEC_DEF: SEC_DEF, SEC_ORDER: SEC_ORDER, pkgById: pkgById, rerenderPesan: function () { if (B && !B.busy) renderPesan(); }, rerenderHome: function () { if ($('#home-root').dataset.ready) renderHome(); } };
   Router.start();
   /* Lisensi: bilah hak cipta / lencana (nk-license.js) menempel di bawah layar. Ukur tingginya lalu geser bilah menu bawah ke atasnya
    * supaya menu tetap bisa ditekan. Hanya MEMBACA lewat elementFromPoint (Shadow DOM SDK tertutup); tidak menyentuh SDK. */
   function nklSpace() {
     try {
-      var H = window.innerHeight, h = 0, found = false;
-      for (var y = H - 2; y > H - 260; y -= 4) {
-        var e = document.elementFromPoint(20, y), on = !!(e && e.getAttribute && e.getAttribute('data-nkl') === '1');
-        if (on) { found = true; h = H - y; } else if (found) break;
-      }
-      document.documentElement.style.setProperty('--nkl-h', h ? (h + 2) + 'px' : '0px');
+      var H = window.innerHeight, h = 0, t = 0, found = false;
+      function isN(e) { return !!(e && e.getAttribute && e.getAttribute('data-nkl') === '1'); }
+      for (var y = H - 2; y > H - 200; y -= 3) { if (isN(document.elementFromPoint(20, y))) { found = true; h = H - y; } else if (found) break; }
+      found = false;
+      for (var y2 = 1; y2 < 200; y2 += 3) { if (isN(document.elementFromPoint(20, y2))) { found = true; t = y2 + 3; } else if (found) break; }
+      var st = document.documentElement.style;
+      st.setProperty('--nkl-h', h ? (h + 1) + 'px' : '0px'); st.setProperty('--nkl-t', t ? t + 'px' : '0px');
     } catch (e) { /* abaikan */ }
   }
-  if (window.NKLicense && window.NKLicense.ready) { window.NKLicense.ready.then(function () { nklSpace(); setTimeout(nklSpace, 1200); }); window.addEventListener('resize', K.debounce(nklSpace, 200)); window.addEventListener('hashchange', function () { setTimeout(nklSpace, 300); }); }
+  K.Router.hooks.push(function () { footSync(true); setTimeout(function () { footSync(true); }, 60); });
+  setInterval(footSync, 1500);
+  if (window.NKLicense && window.NKLicense.ready) { window.NKLicense.ready.then(function () { footSync(true); nklSpace(); setTimeout(function () { footSync(true); nklSpace(); }, 1200); }); window.addEventListener('resize', K.debounce(nklSpace, 200)); window.addEventListener('hashchange', function () { setTimeout(nklSpace, 300); }); }
   loadPub(false);
   document.addEventListener('visibilitychange', function () { if (!document.hidden && Date.now() - (Store.get(CKEY, {}) || {}).t > 120000) loadPub(true); });
   w.addEventListener('kgb:member-expired', function () { UI.toast('Sesi akun berakhir. Silakan masuk lagi.', 'warn'); if (B) { B.promo = undefined; B.voucher = false; } if (Router.cur === 'akun' || Router.cur === 'pesan') Router.render(); });

@@ -7,7 +7,7 @@ Aplikasi ini terdiri dari dua bagian yang terpisah:
 | **Backend** | **Satu berkas** `Kode.gs` + `appsscript.json` | Google Apps Script (akun Google Anda) |
 | **Frontend** | ZIP `kings-gaming-box-frontend.zip` (`index.html`, `css/`, `js/`) | GitHub Pages |
 
-Urutan pemasangan: **backend dulu → salin alamat `/exec` → isi `API_URL` di `index.html` → upload frontend**. Kerjakan satu tahap, pastikan berhasil, baru lanjut.
+Urutan pemasangan: **backend dulu → salin alamat `/exec` → isi `API_URL` di `js/config.js` → upload frontend**. Kerjakan satu tahap, pastikan berhasil, baru lanjut.
 
 ---
 
@@ -44,13 +44,13 @@ Setup membuat: folder Drive `Kings Gaming Box` berisi 3 subfolder (foto pelangga
 ## Tahap 3 — Hubungkan frontend ke backend
 
 1. Ekstrak `kings-gaming-box-frontend.zip`. Anda mendapat folder **`kings-gaming-box-frontend`**.
-2. Buka **`index.html`** dengan Notepad (bukan `js/config.js`; berkas `.js` disegel lisensi dan tidak boleh diubah). Cari baris:
-   ```html
-   <script type="application/json" id="kgb-config">{"API_URL":""}</script>
+2. Buka `js/config.js` dengan Notepad. Ganti:
+   ```js
+   API_URL: '',
    ```
-   lalu isi alamat `/exec` Anda di antara tanda kutip:
-   ```html
-   <script type="application/json" id="kgb-config">{"API_URL":"https://script.google.com/macros/s/AKfycb.../exec"}</script>
+   menjadi (tempel URL `/exec` Anda):
+   ```js
+   API_URL: 'https://script.google.com/macros/s/AKfycb.../exec',
    ```
 3. Simpan. Berkas lain tidak perlu diubah.
 
@@ -169,13 +169,17 @@ Frontend ini dilindungi lisensi Nabire Kreatif (berkas `nk-license.js`, sudah te
 
 | Keadaan | Yang terlihat |
 |---|---|
-| Domain **belum berlisensi** | Mode **DEMO**: pita merah "DEMO", bilah hak cipta, tombol *Beli Lisensi* dan *Aktifkan Lisensi*. Situs tetap bisa dijelajahi. |
-| Domain **berlisensi** | Lencana kecil "© Nabire Kreatif · Template berlisensi" di pojok kiri bawah. Pengunjung tidak diminta kode apa pun. |
-| Berkas template **diubah** atau bilah hak cipta dihapus/disembunyikan | Halaman **terkunci** dan tombol tidak bereaksi. |
+| Domain **belum berlisensi** | Strip merah tipis di **atas**: "DEMO · Template belum berlisensi · *Aktifkan lisensi* · *Beli*". Footer bawaan template berbunyi "© 2026 Nabire Kreatif. Semua hak dilindungi." dengan "www.nabirekreatif.com" di kanan. Situs tetap bisa dijelajahi. |
+| Domain **berlisensi** | Label DEMO hilang. Footer bawaan berbunyi "© 2026 NAMA USAHA. by Nabirekreatif.com", dan teks footer kanan kembali memakai pengaturan Anda. Pengunjung tidak diminta kode. |
+| Berkas template **diubah** | Halaman **terkunci** dan tombol tidak bereaksi. |
+
+Baris hak cipta memakai footer bawaan template, bukan bilah tambahan. Bila baris itu dihapus atau disembunyikan, hak cipta otomatis muncul kembali sebagai bilah kecil di bawah layar; menyembunyikan keduanya mengunci halaman.
+
+Mengedit profil, mengganti nama usaha, menambah unit/paket, dan mengganti logo lewat dasbor **aman**: semuanya tersimpan di server, bukan di berkas template.
 
 **Cara mengaktifkan** (cukup sekali per domain): buka panel Admin → menu **Lisensi** (tombol berikon kunci di navigasi admin), atau buka `https://domain-anda/#key`, lalu masukkan kode lisensi dari Nabire Kreatif dan tekan *Aktifkan Sekarang*.
 
-Yang boleh Anda ubah: `API_URL` di blok `kgb-config` pada `index.html`, gambar di `img/`, dan semua isi/tampilan lewat panel Admin → Pengaturan. Yang **tidak boleh** diubah: berkas `js/*.js`, `css/style.css`, `nk-license.js`, dan skrip di `index.html`.
+Yang boleh Anda ubah: `js/config.js` (isi `API_URL`), gambar di `img/`, dan semua isi/tampilan lewat panel Admin → Pengaturan. Yang **tidak boleh** diubah: berkas `js/*.js` lain, `css/style.css`, `nk-license.js`, dan skrip di `index.html`.
 
 Catatan teknis: gunakan **HTTPS** (GitHub Pages sudah). Bila memakai Cloudflare, matikan *Auto Minify* dan *Rocket Loader* karena mengubah isi berkas. Pencabutan lisensi dari server berlaku paling lama sekitar 24 jam. Perlindungan di browser menyulitkan penyalinan, tetapi tidak mungkin 100% kebal.
 
@@ -221,10 +225,10 @@ Data contoh bertanda `is_demo`; data asli (unit/pengaturan yang sudah Anda ubah,
 |---|---|
 | Situs 404 di GitHub Pages | `git init` dijalankan di folder yang salah. Pindah ke `kings-gaming-box-frontend` (yang berisi `index.html`), `git init`, `git add .`, `git commit`, `git push -u origin main --force` |
 | Halaman tanpa warna / 404 CSS-JS | Berkas rata di root. Ulangi lewat terminal seperti Tahap 4 |
-| Layar "Template tidak berlisensi" / terkunci | Ada berkas template yang berubah (mis. `js/*.js`, `css/style.css`, skrip di `index.html`), atau bilah hak cipta disembunyikan. Pulihkan berkas asli dari ZIP. Pengisian `API_URL` hanya di blok `kgb-config` |
+| Layar "Template tidak berlisensi" / terkunci | Ada berkas template yang berubah (mis. `js/*.js`, `css/style.css`, skrip di `index.html`), atau bilah hak cipta disembunyikan. Pulihkan berkas asli dari ZIP. `js/config.js` boleh diedit (tidak disegel) |
 | Pita DEMO muncul di domain sendiri | Domain belum diaktifkan: Admin → Lisensi (atau `/#key`) → masukkan kode lisensi |
 | Beranda kosong setelah refresh | Penyebab umum: data tersimpan di browser dari versi lama/rusak. Sudah diperbaiki: data rusak otomatis dibuang dan diambil ulang, dan bila gagal muncul pesan dengan tombol **Coba lagi**. Setelah update, cukup muat ulang sekali |
-| Banner "backend belum tersambung" | `API_URL` di blok `kgb-config` pada `index.html` masih kosong atau salah (harus berakhiran `/exec`) |
+| Banner "backend belum tersambung" | `API_URL` di `js/config.js` masih kosong atau salah (harus berakhiran `/exec`) |
 | "Sesi berakhir" / izin ditolak | Deployment bukan *Execute as Me / Anyone*, atau lupa **New version** setelah ubah kode |
 | Perubahan kode backend tidak terasa | Deploy → Manage deployments → Edit → **New version** → Deploy |
 | Tombol Google tidak muncul | Client ID belum diisi di Pengaturan, atau *Authorized JavaScript origins* tidak sama dengan `https://USERNAME.github.io` |

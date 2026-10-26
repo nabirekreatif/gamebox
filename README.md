@@ -6,8 +6,8 @@ Isi folder (folder inilah yang di-`git init`; `index.html` harus terlihat di sin
 
 ```
 css/style.css   tampilan (tema gelap/terang)
-index.html      isi API_URL di blok <script type="application/json" id="kgb-config"> (satu-satunya yang diedit)
-js/config.js    nilai bawaan (DISEGEL lisensi, jangan diedit)
+index.html      halaman tunggal (SPA, navigasi hash)
+js/config.js    SATU-SATUNYA berkas yang perlu Anda edit: isi API_URL (tidak disegel lisensi)
 nk-license.js   modul lisensi Nabire Kreatif (jangan diubah)
 js/core.js      klien API, cache, router, komponen UI
 js/app.js       halaman publik

@@ -63,9 +63,8 @@
 <div class="toasts" id="toasts" aria-live="polite"></div>
 <noscript><div class="wrap" style="padding:40px 16px"><h2>JavaScript dibutuhkan</h2><p>Aktifkan JavaScript di browser Anda untuk memakai Kings Gaming Box.</p></div></noscript>
 
-<!-- PENGATURAN PEMBELI: isi API_URL di bawah ini (alamat Web App berakhiran /exec). Blok JSON ini aman diedit; berkas .js tidak boleh diubah. -->
-<script type="application/json" id="kgb-config">{"API_URL":""}</script>
-<script src="js/config.js"></script>
+<!-- js/config.js dimuat lewat skrip ini agar TIDAK ikut disegel lisensi: pembeli cukup mengisi API_URL di js/config.js -->
+<script>document.write('<scr'+'ipt src="js/config.js"></scr'+'ipt>');</script>
 <script src="js/icons.js"></script>
 <script src="js/core.js"></script>
 <script src="js/art.js"></script>
