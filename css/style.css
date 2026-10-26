@@ -114,7 +114,7 @@ h3 { font-size: 19px; } h4 { font-size: 16px; }
 @media (min-width: 900px) { .page { padding-bottom: 60px; } }
 
 .bottom-bar {
-  position: fixed; left: 0; right: 0; bottom: 0; z-index: 45; height: var(--bar-h); padding-bottom: env(safe-area-inset-bottom);
+  position: fixed; left: 0; right: 0; bottom: var(--nkl-h, 0px); z-index: 45; height: var(--bar-h); padding-bottom: env(safe-area-inset-bottom);
   display: grid; grid-template-columns: repeat(4, 1fr); background: color-mix(in srgb, var(--surface) 94%, transparent); backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px); border-top: 1px solid var(--line-strong);
 }
 .bottom-bar a { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 3px; color: var(--muted); font-size: 11.5px; font-weight: 700; text-decoration: none !important; min-height: 56px; position: relative; }
@@ -542,3 +542,11 @@ html { -webkit-text-size-adjust: 100%; text-size-adjust: 100%; }
   .toast { font-size: 13px; }
   .tbl { font-size: 13px; }
 }
+
+/* tombol menu Lisensi (dibuka oleh nk-license.js lewat atribut data-nk-license) */
+.admin-nav .nav-lic { flex: none; display: inline-flex; align-items: center; gap: 8px; min-height: 44px; padding: 0 16px; border-radius: 999px; background: var(--surface); border: 1px dashed var(--line); color: var(--ink-soft); font: inherit; font-weight: 700; font-size: 14px; cursor: pointer; }
+.admin-nav .nav-lic:hover { border-color: var(--primary); color: var(--ink); }
+@media (min-width: 900px) { .admin-nav .nav-lic { border-radius: 14px; justify-content: flex-start; } }
+
+/* ruang untuk bilah lisensi (diisi app.js; 0 bila tidak ada) */
+body { padding-bottom: var(--nkl-h, 0px); }

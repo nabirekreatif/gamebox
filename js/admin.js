@@ -103,7 +103,7 @@
     var cur = tab;
     return '<nav class="admin-nav" aria-label="Menu admin">' + TABS.filter(function (t) { return t[0] !== 'sistem' || Auth.isSuper(); }).map(function (t) {
       return '<a href="#/admin/' + t[0] + '"' + (t[0] === cur ? ' aria-current="page"' : '') + '>' + ic(t[2]) + t[1] + (t[0] === 'pesanan' && pending() ? '<span class="n">' + pending() + '</span>' : '') + '</a>';
-    }).join('') + '</nav>';
+    }).join('') + '<button type="button" class="nav-lic" data-nk-license aria-label="Lisensi template">' + ic('key') + 'Lisensi</button></nav>';
   }
   function shell() {
     root.innerHTML = '<div class="row between wrap-r" style="margin:6px 0 14px"><div><span class="eyebrow">' + ic('shield') + (Auth.isSuper() ? 'Superadmin' : 'Admin') + '</span><h2 style="margin:0">Panel Pengelola</h2></div>' +

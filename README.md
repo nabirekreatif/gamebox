@@ -5,9 +5,10 @@ Situs statis penyewaan Playbox PS4. Backend berupa Google Apps Script (REST API 
 Isi folder (folder inilah yang di-`git init`; `index.html` harus terlihat di sini):
 
 ```
-index.html      halaman tunggal (SPA, navigasi hash)
 css/style.css   tampilan (tema gelap/terang)
-js/config.js    SATU-SATUNYA berkas yang perlu Anda edit: isi API_URL
+index.html      isi API_URL di blok <script type="application/json" id="kgb-config"> (satu-satunya yang diedit)
+js/config.js    nilai bawaan (DISEGEL lisensi, jangan diedit)
+nk-license.js   modul lisensi Nabire Kreatif (jangan diubah)
 js/core.js      klien API, cache, router, komponen UI
 js/app.js       halaman publik
 js/admin.js     panel admin (dimuat saat dibutuhkan)

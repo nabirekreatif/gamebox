@@ -588,6 +588,19 @@
   K.pub = pub; K.brand = brand(); if (pub.settings && pub.settings.timezone) Time.tz = pub.settings.timezone;
   K.App = { loadPub: loadPub, pub: function () { return pub; }, waLink: waLink, S: S, Orders: Orders, durLabel: durLabel, applyPub: applyPub, loyalty: loyalty, promoLabel: promoLabel, promoDisc: promoDisc, fmtYmd: fmtYmd, loyaltyDots: loyaltyDots, sections: sections, SEC_DEF: SEC_DEF, SEC_ORDER: SEC_ORDER, pkgById: pkgById, rerenderPesan: function () { if (B && !B.busy) renderPesan(); }, rerenderHome: function () { if ($('#home-root').dataset.ready) renderHome(); } };
   Router.start();
+  /* Lisensi: bilah hak cipta / lencana (nk-license.js) menempel di bawah layar. Ukur tingginya lalu geser bilah menu bawah ke atasnya
+   * supaya menu tetap bisa ditekan. Hanya MEMBACA lewat elementFromPoint (Shadow DOM SDK tertutup); tidak menyentuh SDK. */
+  function nklSpace() {
+    try {
+      var H = window.innerHeight, h = 0, found = false;
+      for (var y = H - 2; y > H - 260; y -= 4) {
+        var e = document.elementFromPoint(20, y), on = !!(e && e.getAttribute && e.getAttribute('data-nkl') === '1');
+        if (on) { found = true; h = H - y; } else if (found) break;
+      }
+      document.documentElement.style.setProperty('--nkl-h', h ? (h + 2) + 'px' : '0px');
+    } catch (e) { /* abaikan */ }
+  }
+  if (window.NKLicense && window.NKLicense.ready) { window.NKLicense.ready.then(function () { nklSpace(); setTimeout(nklSpace, 1200); }); window.addEventListener('resize', K.debounce(nklSpace, 200)); window.addEventListener('hashchange', function () { setTimeout(nklSpace, 300); }); }
   loadPub(false);
   document.addEventListener('visibilitychange', function () { if (!document.hidden && Date.now() - (Store.get(CKEY, {}) || {}).t > 120000) loadPub(true); });
   w.addEventListener('kgb:member-expired', function () { UI.toast('Sesi akun berakhir. Silakan masuk lagi.', 'warn'); if (B) { B.promo = undefined; B.voucher = false; } if (Router.cur === 'akun' || Router.cur === 'pesan') Router.render(); });
