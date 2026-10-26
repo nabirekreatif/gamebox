@@ -6,6 +6,7 @@
  * Selama API_URL kosong, halaman tetap tampil memakai data contoh bawaan, tetapi pemesanan & admin belum berfungsi.
  */
 window.APP_CONFIG = {
+  API_URL: 'ONFIG = {
   API_URL: 'https://script.google.com/macros/s/AKfycbzKuf8GUWiX7-vbGvfvrZKXmj0h_n_UI-G9d9eQ5KGdsL6eEn1nQI6Cjh8y12yEtptM/exec',                         // contoh: 'https://script.google.com/macros/s/AKfycb.../exec'
   BRAND: 'KINGS GAMING BOX',
   WA_ADMIN: '6282121210694',           // cadangan; nilai sebenarnya diambil dari Pengaturan di server
