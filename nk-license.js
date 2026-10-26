@@ -1,10 +1,10 @@
-window.NKL={"api":"https://script.google.com/macros/s/AKfycbzKuf8GUWiX7-vbGvfvrZKXmj0h_n_UI-G9d9eQ5KGdsL6eEn1nQI6Cjh8y12yEtptM/exec","pid":"PRD-76ADB9E0","nama":"Template Web Premium","pub":"MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAv/NaOwG8N4xweiXQZU/rxfusLgn1jQip2NP6OGA61NFqnT3waPsz2bE9v8bDY6OQ/p6hGarrEq3E0+/tr4g9XunJJ5gvnRlqIq0o83y/5mwBxBr4l+1XRO6W7WbvzS3EyVltillSMOpHjcw2MAf/q70mWBxTIPoTbVcbzw3ecql28ctY1pm4f6VfhJlzSDzObg1fvHyb2+qsvk+EIn9LMGYoB3BQwTrLwMal03ygb1U8zLzEpkmFsaQbI5Fd0xuIuS/jrQRrES1UP7xIJNjnnB6b0tMe1OXWF3LUol8wd+61AnFhAVtWc6SV0OUk+lL/BHhuWLD2DPPccNBxgeIVdQIDAQAB","owner":["nabirekreatif.com"],"beli":"https://nabirekreatif.github.io/nabire-kreatif/#/produk/PRD-76ADB9E0"};
 /*! nk-license.js — Pengaman lisensi template web Nabire Kreatif
  *  Pasang di <head> template SEBELUM skrip lain:
  *    <script src="nk-license.js"></script>
  *  Konfigurasi (window.NKL) diisi otomatis lewat menu Admin → Lisensi → "Unduh nk-license.js".
- *  Cara kerja: bila template dibuka di domain yang bukan milik penjual, halaman disembunyikan dan
- *  diminta kode lisensi. Kode divalidasi ke server Nabire Kreatif → token bertanda tangan (RSA) yang
+ *  Cara kerja: bila template dibuka di domain yang bukan milik penjual dan domain itu belum diaktifkan,
+ *  halaman disembunyikan dan diminta kode lisensi — SEKALI saja oleh pembeli; setelah domain aktif,
+ *  semua pengunjung langsung melihat halaman tanpa kode. Kode divalidasi ke server Nabire Kreatif → token bertanda tangan (RSA) yang
  *  diverifikasi di browser dengan kunci publik. Token berlaku 7 hari, disegarkan tiap ≤24 jam.
  *  Gunakan: NKLicense.ready.then(function(){ jalankanAplikasiTemplate(); });
  */
@@ -56,19 +56,21 @@ window.NKL={"api":"https://script.google.com/macros/s/AKfycbzKuf8GUWiX7-vbGvfvrZ
   }
   function pass(p, kode) { state.ok = true; state.exp = p.exp; state.reason = ''; unlock(); res(state); schedule(kode); }
   var tmr = null;
-  function schedule(kode) { clearInterval(tmr); tmr = setInterval(function () { recheck(kode, false); }, 30 * 60 * 1000); }
+  function schedule() { clearInterval(tmr); tmr = setInterval(function () { recheck(false); }, 30 * 60 * 1000); }
 
-  /* Cek ulang: segarkan token bila usia > 24 jam. Gagal jaringan → tetap berlaku sampai token kedaluwarsa. */
-  function recheck(kode, force) {
-    var st = get(host); if (!st || !st.token) return gate(kode ? 'Sesi lisensi berakhir. Masukkan kembali kode lisensi.' : '');
+  /* Cek lisensi domain. Pengunjung tanpa kode pun dikenali bila domain ini sudah diaktifkan pembeli
+   * (cukup SATU kali memasukkan kode per domain). Token segar (<24 jam) diverifikasi offline.
+   * Gagal jaringan → tetap berlaku sampai token kedaluwarsa. */
+  function recheck(force) {
+    var st = get(host) || {};
     return checkToken(st.token).then(function (p) {
       var fresh = p && (now() - p.iat) < DAY;
       if (fresh && !force) { if (!state.ok) pass(p, st.kode); return; }
-      return verify(st.kode).then(function (j) {
-        if (j && j.success && j.data && j.data.token) { return checkToken(j.data.token).then(function (np) { if (np) { put(host, { kode: st.kode, token: j.data.token }); if (!state.ok) pass(np, st.kode); } else if (!p) gate('Respons server tidak valid.'); }); }
+      return verify(st.kode || '').then(function (j) {
+        if (j && j.success && j.data && j.data.token) { return checkToken(j.data.token).then(function (np) { if (np) { put(host, { kode: st.kode || '', token: j.data.token }); if (!state.ok) pass(np, st.kode); } else if (!p) gate('Respons server tidak valid. Pastikan konfigurasi lisensi benar.'); }); }
         var msg = (j && j.message) || 'Lisensi tidak valid.', code = j && j.data && j.data.code;
         if (code === 'RATE') { if (p) { if (!state.ok) pass(p, st.kode); return; } return gate(msg); }
-        put(host, null); state.ok = false; lock(); gate(msg, st.kode);
+        put(host, null); state.ok = false; lock(); gate(code === 'NOREG' && !st.token ? '' : msg, st.kode);
       }).catch(function () { if (p) { if (!state.ok) pass(p, st.kode); } else gate('Tidak dapat terhubung ke server lisensi. Periksa koneksi internet lalu muat ulang.', st.kode); });
     });
   }
@@ -119,7 +121,7 @@ window.NKL={"api":"https://script.google.com/macros/s/AKfycbzKuf8GUWiX7-vbGvfvrZ
     lock();
     if (!C.api || !C.pub) { var go = function () { gate('Konfigurasi lisensi belum lengkap (api / pub). Unduh ulang nk-license.js dari dasbor admin.'); }; return d.body ? go() : d.addEventListener('DOMContentLoaded', go); }
     if (!(w.crypto && crypto.subtle)) { var g2 = function () { gate('Browser/alamat ini tidak mendukung verifikasi lisensi. Buka lewat HTTPS.'); }; return d.body ? g2() : d.addEventListener('DOMContentLoaded', g2); }
-    var run = function () { guard(); var st = get(host); if (st && st.token) recheck(st.kode, false); else gate(''); };
+    var run = function () { guard(); recheck(false); };
     if (d.body) run(); else d.addEventListener('DOMContentLoaded', run);
   }
   start();
