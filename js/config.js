@@ -7,7 +7,7 @@
  */
 window.APP_CONFIG = {
   API_URL: 'ONFIG = {
-  API_URL: 'https://script.google.com/macros/s/AKfycbzKuf8GUWiX7-vbGvfvrZKXmj0h_n_UI-G9d9eQ5KGdsL6eEn1nQI6Cjh8y12yEtptM/exec',                         // contoh: 'https://script.google.com/macros/s/AKfycb.../exec'
+  API_URL: 'https://script.google.com/macros/s/AKfycbxyU9cRo8zm8ihKOhcqglTm0kLPHx_Vqmev3g_t8CefHIP_HzeUYi6FuyltGili61WC4Q/exec',                         // contoh: 'https://script.google.com/macros/s/AKfycb.../exec'
   BRAND: 'KINGS GAMING BOX',
   WA_ADMIN: '6282121210694',           // cadangan; nilai sebenarnya diambil dari Pengaturan di server
   WA_ADMIN_TAMPIL: '082121210694',
