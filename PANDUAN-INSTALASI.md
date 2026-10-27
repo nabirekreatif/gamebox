@@ -54,6 +54,8 @@ Setup membuat: folder Drive `Kings Gaming Box` berisi 3 subfolder (foto pelangga
    ```
 3. Simpan. Berkas lain tidak perlu diubah.
 
+> **Cara paling mudah memastikan alamat benar:** setelah situs online, buka `https://USERNAME.github.io/NAMA-REPO/#/setup`, tempel alamat `/exec`, tekan **Tes koneksi**. Bila berhasil, halaman itu memberi baris `API_URL: '...'` siap salin untuk `js/config.js`. Setelah mengubah `config.js`, push ke GitHub lalu muat ulang sekali (Ctrl+Shift+R).
+
 ## Tahap 4 — Upload ke GitHub Pages (lewat terminal, bukan "Upload files")
 
 > **Penting:** jangan memakai tombol *Add file → Upload files* di situs GitHub. Cara itu meratakan folder `css/` dan `js/` sehingga tampilan rusak.
@@ -169,7 +171,7 @@ Frontend ini dilindungi lisensi Nabire Kreatif (berkas `nk-license.js`, sudah te
 
 | Keadaan | Yang terlihat |
 |---|---|
-| Domain **belum berlisensi** | Strip merah tipis di **atas**: "DEMO · Template belum berlisensi · *Aktifkan lisensi* · *Beli*". Footer bawaan template berbunyi "© 2026 Nabire Kreatif. Semua hak dilindungi." dengan "www.nabirekreatif.com" di kanan. Situs tetap bisa dijelajahi. |
+| Domain **belum berlisensi** | Satu baris merah tipis di paling atas halaman: "DEMO · Template belum berlisensi · *Aktifkan lisensi*" (tidak menggeser header). Footer bawaan template berbunyi "© 2026 Nabire Kreatif. Semua hak dilindungi." dengan "www.nabirekreatif.com" di kanan. Situs tetap bisa dijelajahi. |
 | Domain **berlisensi** | Label DEMO hilang. Footer bawaan berbunyi "© 2026 NAMA USAHA. by Nabirekreatif.com", dan teks footer kanan kembali memakai pengaturan Anda. Pengunjung tidak diminta kode. |
 | Berkas template **diubah** | Halaman **terkunci** dan tombol tidak bereaksi. |
 
@@ -228,7 +230,8 @@ Data contoh bertanda `is_demo`; data asli (unit/pengaturan yang sudah Anda ubah,
 | Layar "Template tidak berlisensi" / terkunci | Ada berkas template yang berubah (mis. `js/*.js`, `css/style.css`, skrip di `index.html`), atau bilah hak cipta disembunyikan. Pulihkan berkas asli dari ZIP. `js/config.js` boleh diedit (tidak disegel) |
 | Pita DEMO muncul di domain sendiri | Domain belum diaktifkan: Admin → Lisensi (atau `/#key`) → masukkan kode lisensi |
 | Beranda kosong setelah refresh | Penyebab umum: data tersimpan di browser dari versi lama/rusak. Sudah diperbaiki: data rusak otomatis dibuang dan diambil ulang, dan bila gagal muncul pesan dengan tombol **Coba lagi**. Setelah update, cukup muat ulang sekali |
-| Banner "backend belum tersambung" | `API_URL` di `js/config.js` masih kosong atau salah (harus berakhiran `/exec`) |
+| Banner "backend belum tersambung" / data tidak termuat | `API_URL` di `js/config.js` masih kosong atau salah. Buka `#/setup` di situs Anda, tempel alamat `/exec`, tekan **Tes koneksi**: halaman itu menjelaskan penyebabnya (alamat salah, deploy belum *Anyone*, belum **New version**, atau `setupAppEnvironment` belum dijalankan) |
+| Sudah isi `API_URL` tetapi situs masih lama | Cache browser/PWA. Tekan Ctrl+Shift+R (di HP: tutup tab lalu buka lagi). Versi ini selalu memeriksa berkas terbaru ke server |
 | "Sesi berakhir" / izin ditolak | Deployment bukan *Execute as Me / Anyone*, atau lupa **New version** setelah ubah kode |
 | Perubahan kode backend tidak terasa | Deploy → Manage deployments → Edit → **New version** → Deploy |
 | Tombol Google tidak muncul | Client ID belum diisi di Pengaturan, atau *Authorized JavaScript origins* tidak sama dengan `https://USERNAME.github.io` |

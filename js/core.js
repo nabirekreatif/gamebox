@@ -154,7 +154,7 @@
           return res;
         } catch (e) { last = e; if (i < timeouts.length - 1) await sleep(500 * (i + 1)); }
       }
-      return { success: false, code: 'NET', message: last && last.message === 'NONJSON' ? 'Server mengirim balasan yang tidak dikenali. Coba lagi sebentar lagi.' : 'Koneksi bermasalah. Periksa internet Anda lalu coba lagi.' };
+      return { success: false, code: 'NET', message: last && last.message === 'NONJSON' ? 'Backend menjawab, tetapi bukan data. Pastikan deploy Apps Script diatur akses "Anyone" dan alamatnya berakhiran /exec.' : 'Tidak bisa menghubungi backend. Periksa internet Anda, atau pastikan API_URL di js/config.js benar.' };
     })();
     if (key) { inflight[key] = run; run.then(function () { delete inflight[key]; }, function () { delete inflight[key]; }); }
     return run;

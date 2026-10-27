@@ -83,7 +83,39 @@
       onError: function (res) { if (res.code === 'NOAPI') { applyPub(Object.assign({}, FALLBACK), true); } else { var r = $('#home-root'); if (r && !r.dataset.ready) r.innerHTML = errBox(res.message); } }
     });
   }
-  function errBox(msg) { return '<div class="empty">' + ic('warn') + '<p>' + esc(msg || 'Gagal memuat data.') + '</p><button class="btn primary mt" data-retry>' + ic('refresh') + 'Coba lagi</button></div>'; }
+  function errBox(msg) { return '<div class="empty">' + ic('warn') + '<p>' + esc(msg || 'Gagal memuat data.') + '</p><button class="btn primary mt" data-retry>' + ic('refresh') + 'Coba lagi</button><p class="small muted" style="margin-top:12px">Pemilik situs: <a href="#/setup">uji alamat backend di sini</a></p></div>'; }
+
+  /* ------------------------------------------------------------------ #/setup : uji & sambungkan backend (untuk pemilik) */
+  function setupView(root) {
+    var cur = CFG.API_URL || '';
+    root.innerHTML = '<div class="card stack" style="max-width:640px;margin:22px auto"><div class="card-title">' + ic('plug') + '<h3>Sambungkan backend</h3></div>' +
+      '<p class="muted small">Halaman ini untuk pemilik situs. Tempel alamat Web App Google Apps Script (berakhiran <span class="code">/exec</span>), lalu tekan <b>Tes koneksi</b>.</p>' +
+      '<p class="small">Alamat yang dipakai situs ini sekarang: ' + (cur ? '<span class="code" style="word-break:break-all">' + esc(cur) + '</span>' : '<b>belum diisi</b> (<span class="code">API_URL</span> di <span class="code">js/config.js</span> masih kosong)') + '</p>' +
+      '<div class="field"><label for="su">Alamat Web App (/exec)</label><input class="in" id="su" type="url" inputmode="url" autocomplete="off" placeholder="https://script.google.com/macros/s/.../exec" value="' + esc(cur) + '"></div>' +
+      '<button class="btn primary" id="su-go" type="button">' + ic('zap') + 'Tes koneksi</button><div id="su-out" class="stack" aria-live="polite"></div></div>';
+    var out = root.querySelector('#su-out'), inp = root.querySelector('#su'), btn = root.querySelector('#su-go');
+    function box(kind, html) { out.innerHTML = '<div class="alert ' + kind + '">' + (kind === 'warn' ? ic('warn') : ic('check')) + '<div>' + html + '</div></div>'; }
+    btn.addEventListener('click', function () {
+      var u = (inp.value || '').trim().replace(/\s+/g, '');
+      if (!/^https:\/\/script\.google\.com\/macros\/s\/[\w-]+\/exec$/.test(u)) { box('warn', 'Alamat belum benar. Harus seperti <span class="code">https://script.google.com/macros/s/AKfy.../exec</span> (berakhiran <b>/exec</b>, bukan /dev). Salin dari Apps Script → Deploy → Manage deployments → Web app URL.'); return; }
+      btn.disabled = true; out.innerHTML = '<p class="muted small">Menghubungi backend… (bisa sampai 20 detik pada percobaan pertama)</p>';
+      var ctl = ('AbortController' in window) ? new AbortController() : null, to = setTimeout(function () { if (ctl) ctl.abort(); }, 25000);
+      fetch(u, { method: 'POST', headers: { 'Content-Type': 'text/plain;charset=utf-8' }, body: JSON.stringify({ action: 'publicData', data: {} }), redirect: 'follow', signal: ctl ? ctl.signal : undefined })
+        .then(function (r) { return r.text(); })
+        .then(function (t) {
+          var j = null; try { j = JSON.parse(t); } catch (e) { }
+          if (!j) { box('warn', '<b>Backend menjawab, tetapi bukan data.</b> Biasanya karena deploy belum diatur <b>Execute as: Me</b> dan <b>Who has access: Anyone</b>, atau Anda belum membuat <b>New version</b> setelah mengubah kode. Perbaiki di Deploy → Manage deployments, lalu tes lagi.'); return; }
+          if (!j.success) { box('warn', '<b>Backend menjawab galat:</b> ' + esc(j.message || 'tidak diketahui') + '<br>Bila ini pemasangan pertama, jalankan fungsi <span class="code">setupAppEnvironment</span> sekali di editor Apps Script, lalu tes lagi.'); return; }
+          var d = j.data || {}, line = "API_URL: '" + u + "',";
+          box('ok', '<b>Tersambung ✓</b> Data terbaca: ' + ((d.packages || []).length) + ' paket, ' + ((d.units || []).length) + ' unit.<br><br>Langkah terakhir: buka <span class="code">js/config.js</span>, ganti baris <span class="code">API_URL</span> dengan baris di bawah, simpan, lalu push ke GitHub.' +
+            '<div class="code" style="display:block;margin:10px 0;padding:10px;word-break:break-all">' + esc(line) + '</div><button class="btn sm" id="su-cp" type="button">' + ic('copy') + 'Salin baris ini</button>');
+          var cp = out.querySelector('#su-cp'); if (cp) cp.addEventListener('click', function () { try { navigator.clipboard.writeText(line).then(function () { K.UI.toast('Baris disalin'); }); } catch (e) { K.UI.toast('Salin manual dari kotak di atas', 'warn'); } });
+        })
+        .catch(function () { box('warn', '<b>Tidak bisa terhubung.</b> Kemungkinan: alamat salah, deploy belum <b>Anyone</b>, atau internet bermasalah. Coba buka alamat itu langsung di tab baru: bila muncul halaman login Google, ubah akses deploy menjadi Anyone.'); })
+        .then(function () { clearTimeout(to); btn.disabled = false; });
+    });
+  }
+  Router.add('setup', { el: 'pg-setup', title: 'Sambungkan backend', init: function (el) { setupView(el.querySelector('#setup-root')); } });
   document.addEventListener('click', function (e) { if (e.target.closest('[data-retry]')) { loadPub(true); } });
 
   /* ------------------------------------------------------------------ promo, voucher, loyalitas */
@@ -192,9 +224,9 @@
         '<div class="ps-row" aria-hidden="true">' + ic('psTriangle') + ic('psCircle') + ic('psCross') + ic('psSquare') + '</div>' +
       '</div><div>' + (hero ? '<img class="hero-banner" alt="Banner ' + esc(brand()) + '" src="' + esc(hero) + '" onerror="this.replaceWith(Object.assign(document.createElement(\'div\'),{innerHTML:KGB.ic(\'playbox\',\'hero-art\')}).firstChild)">' : ic('playbox', 'hero-art')) + '</div></div></div>' +
       (ann ? '<div class="announce" role="note">' + ic('megaphone') + '<span>' + esc(ann) + '</span></div>' : '') +
-      (pub.offline ? '<div class="alert warn mt">' + ic('warn') + '<div>Menampilkan data bawaan karena backend belum tersambung. Isi <span class="code">API_URL</span> di <span class="code">js/config.js</span> agar pemesanan berfungsi.</div></div>' : '') +
-      sections().filter(function (x) { return x.show; }).map(function (x) { return '<section class="home-sec" data-sec="' + x.id + '">' + SEC[x.id](x) + '</section>'; }).join('');
-    footSync(true); renderGames(); renderSched();
+      (pub.offline ? '<div class="alert warn mt">' + ic('warn') + '<div>Menampilkan data bawaan karena backend belum tersambung. Isi <span class="code">API_URL</span> di <span class="code">js/config.js</span> agar pemesanan berfungsi. <a href="#/setup">Uji alamat backend</a></div></div>' : '') +
+      sections().filter(function (x) { return x.show; }).map(function (x) { return '<section class="home-sec" data-sec="' + x.id + '">' + SEC[x.id](x) + '</section>'; }).join('') + footHtml();
+    footSync(); renderGames(); renderSched();
   }
   function renderGames() {
     var g = $('#g-grid'); if (!g) return;
@@ -224,27 +256,28 @@
       (tt ? '<a class="soc tt" href="https://www.tiktok.com/@' + encodeURIComponent(tt) + '" target="_blank" rel="noopener"><span class="ico">' + ic('tiktok') + '</span><div><b>TikTok</b><span>@' + esc(tt) + '</span></div></a>' : '') +
       '<a class="soc mp" href="' + esc(mp) + '" target="_blank" rel="noopener"><span class="ico">' + ic('gmaps') + '</span><div><b>Lokasi</b><span>' + esc(addr) + '</span></div></a></div>';
   }
-  /* Footer bawaan template — satu elemen yang selalu menempel di bawah halaman yang sedang aktif.
-   * Baris hak cipta (span data-nk-copy) diisi modul lisensi nk-license.js:
-   *   belum berlisensi : "© 2026 Nabire Kreatif. Semua hak dilindungi."
-   *   sudah berlisensi : "© 2026 NAMA USAHA. by Nabirekreatif.com"
-   * Teks bawaan di bawah ini hanya cadangan bila modul lisensi tidak dipasang. */
-  var footEl = null;
-  function licDemo() { try { var st = window.NKLicense && window.NKLicense.status(); return !!st && st.mode === 'demo'; } catch (e) { return false; } }
-  function footRight() { return licDemo() ? 'www.nabirekreatif.com' : S('footer_right', 'Sewa Playbox PS4 · Nabire'); }
-  function footInner() {
-    return (S('footer_text') ? '<div class="small muted" style="margin-bottom:8px">' + esc(S('footer_text')) + '</div>' : '') +
-      '<div class="row between wrap-r"><span class="foot-copy" data-nk-copy>&copy; ' + new Date().getFullYear() + ' ' + esc(brand()) + '. Semua hak dilindungi.</span>' +
-      '<span data-nk-right>' + esc(footRight()) + '</span></div>';
+  /* Footer bawaan template (tata letak & gaya TIDAK berubah). Hanya baris hak cipta yang ditautkan ke Nabire Kreatif:
+   *   belum berlisensi : "© 2026 Nabire Kreatif. Semua hak dilindungi."  — kanan: www.nabirekreatif.com
+   *   sudah berlisensi : "© 2026 NAMA USAHA. by Nabirekreatif.com"       — kanan: teks footer pemilik
+   * Isi baris hak cipta ditulis oleh modul lisensi (nk-license.js) ke elemen [data-nk-copy]. */
+  function licMode() { try { var st = window.NKLicense && window.NKLicense.status(); return st ? st.mode : ''; } catch (e) { return ''; } }
+  function footRight() { return licMode() === 'demo' ? 'www.nabirekreatif.com' : S('footer_right', 'Sewa Playbox PS4 · Nabire'); }
+  function footHtml() {
+    var y = new Date().getFullYear(), own = S('footer_text') ? ' ' + esc(S('footer_text')) : '';
+    return '<footer class="foot"><div class="row between wrap-r"><span><span data-nk-copy>&copy; ' + y + ' Nabire Kreatif. Semua hak dilindungi.</span>' + own + '</span><span data-nk-right>' + esc(footRight()) + '</span></div></footer>';
   }
-  function footSync(force) {
-    var pg = $('.page.on'); if (!pg) return;
-    if (!footEl) { footEl = document.createElement('footer'); footEl.className = 'foot'; force = true; }
-    if (footEl.parentNode !== pg || footEl.nextSibling) { pg.appendChild(footEl); force = true; }
-    if (force) {
-      footEl.innerHTML = footInner();
-      try { if (window.NKLicense && window.NKLicense.sync) window.NKLicense.sync(); } catch (e) { }
-    } else { var r = footEl.querySelector('[data-nk-right]'); if (r && r.textContent !== footRight()) r.textContent = footRight(); }
+  function footSync() {
+    try { if (window.NKLicense && window.NKLicense.sync) window.NKLicense.sync(); } catch (e) { }
+    $$('[data-nk-right]').forEach(function (e2) { var t = footRight(); if (e2.textContent !== t) e2.textContent = t; });
+  }
+  /* label DEMO: ditambahkan sebagai baris biasa di atas halaman hanya saat belum berlisensi */
+  function demoBar() {
+    var m = licMode(), el = document.getElementById('lic-demo');
+    if (m !== 'demo') { if (el) el.remove(); return; }
+    if (el) return;
+    el = document.createElement('div'); el.id = 'lic-demo'; el.className = 'lic-demo no-print';
+    el.innerHTML = '<b>DEMO</b>Template belum berlisensi.<button type="button" data-nk-license>Aktifkan lisensi</button>';
+    document.body.insertBefore(el, document.body.firstChild);
   }
 
   /* ================================================================== PESAN */
@@ -526,8 +559,8 @@
   function renderKontak() {
     $('#kontak-root').innerHTML = '<div class="section-head" style="margin-top:6px"><div><span class="eyebrow">' + ic('pin') + 'Hubungi kami</span><h2>Lokasi &amp; Kontak</h2></div></div>' + socialHtml() +
       '<div class="card mt-lg" style="margin-top:22px"><div class="card-title">' + ic('truck') + '<h3>Layanan antar jemput</h3></div><p class="muted">Playbox diantar ke rumah, kost, cafe, atau tempat tongkrongan Anda dan diambil kembali setelah masa sewa selesai. Alamat antar diisi saat pemesanan.</p></div>' +
-      '<div class="card" style="margin-top:14px"><div class="card-title">' + ic('shield') + '<h3>Syarat singkat</h3></div><ul class="stack muted" style="padding-left:18px"><li>Wajib melampirkan foto KTP atau identitas jaminan.</li><li>Kerusakan akibat kelalaian penyewa menjadi tanggung jawab penyewa.</li><li>Perpanjangan waktu: hubungi admin sebelum masa sewa berakhir.</li></ul></div>';
-    footSync(true);
+      '<div class="card" style="margin-top:14px"><div class="card-title">' + ic('shield') + '<h3>Syarat singkat</h3></div><ul class="stack muted" style="padding-left:18px"><li>Wajib melampirkan foto KTP atau identitas jaminan.</li><li>Kerusakan akibat kelalaian penyewa menjadi tanggung jawab penyewa.</li><li>Perpanjangan waktu: hubungi admin sebelum masa sewa berakhir.</li></ul></div>' + footHtml();
+    footSync();
   }
 
   /* ================================================================== ADMIN (dimuat saat dibutuhkan) */
@@ -610,22 +643,12 @@
   K.pub = pub; K.brand = brand(); try { document.documentElement.setAttribute('data-brand', K.brand); } catch (e) { } if (pub.settings && pub.settings.timezone) Time.tz = pub.settings.timezone;
   K.App = { loadPub: loadPub, pub: function () { return pub; }, waLink: waLink, S: S, Orders: Orders, durLabel: durLabel, applyPub: applyPub, loyalty: loyalty, promoLabel: promoLabel, promoDisc: promoDisc, fmtYmd: fmtYmd, loyaltyDots: loyaltyDots, sections: sections, SEC_DEF: SEC_DEF, SEC_ORDER: SEC_ORDER, pkgById: pkgById, rerenderPesan: function () { if (B && !B.busy) renderPesan(); }, rerenderHome: function () { if ($('#home-root').dataset.ready) renderHome(); } };
   Router.start();
-  /* Lisensi: bilah hak cipta / lencana (nk-license.js) menempel di bawah layar. Ukur tingginya lalu geser bilah menu bawah ke atasnya
-   * supaya menu tetap bisa ditekan. Hanya MEMBACA lewat elementFromPoint (Shadow DOM SDK tertutup); tidak menyentuh SDK. */
-  function nklSpace() {
-    try {
-      var H = window.innerHeight, h = 0, t = 0, found = false;
-      function isN(e) { return !!(e && e.getAttribute && e.getAttribute('data-nkl') === '1'); }
-      for (var y = H - 2; y > H - 200; y -= 3) { if (isN(document.elementFromPoint(20, y))) { found = true; h = H - y; } else if (found) break; }
-      found = false;
-      for (var y2 = 1; y2 < 200; y2 += 3) { if (isN(document.elementFromPoint(20, y2))) { found = true; t = y2 + 3; } else if (found) break; }
-      var st = document.documentElement.style;
-      st.setProperty('--nkl-h', h ? (h + 1) + 'px' : '0px'); st.setProperty('--nkl-t', t ? t + 'px' : '0px');
-    } catch (e) { /* abaikan */ }
+  /* Lisensi: sinkronkan footer & label DEMO begitu status lisensi diketahui (tidak mengubah tata letak). */
+  if (window.NKLicense && window.NKLicense.ready) {
+    window.NKLicense.ready.then(function () { footSync(); demoBar(); setTimeout(function () { footSync(); demoBar(); }, 1500); });
+    setInterval(function () { demoBar(); footSync(); }, 2000);
+    K.Router.hooks.push(function () { footSync(); });
   }
-  K.Router.hooks.push(function () { footSync(true); setTimeout(function () { footSync(true); }, 60); });
-  setInterval(footSync, 1500);
-  if (window.NKLicense && window.NKLicense.ready) { window.NKLicense.ready.then(function () { footSync(true); nklSpace(); setTimeout(function () { footSync(true); nklSpace(); }, 1200); }); window.addEventListener('resize', K.debounce(nklSpace, 200)); window.addEventListener('hashchange', function () { setTimeout(nklSpace, 300); }); }
   loadPub(false);
   document.addEventListener('visibilitychange', function () { if (!document.hidden && Date.now() - (Store.get(CKEY, {}) || {}).t > 120000) loadPub(true); });
   w.addEventListener('kgb:member-expired', function () { UI.toast('Sesi akun berakhir. Silakan masuk lagi.', 'warn'); if (B) { B.promo = undefined; B.voucher = false; } if (Router.cur === 'akun' || Router.cur === 'pesan') Router.render(); });

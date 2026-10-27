@@ -2,7 +2,7 @@
  * Strategi: JARINGAN DULU, cache sebagai cadangan (untuk berkas milik sendiri saja).
  * Dengan begitu pembaruan yang Anda push ke GitHub langsung terpakai, dan aplikasi tetap terbuka saat sinyal buruk.
  * Panggilan ke Google Apps Script (API) tidak pernah disimpan di sini. */
-var V = 'kgb-shell-v1';
+var V = 'kgb-shell-v2';
 var SHELL = ['./', 'index.html', 'manifest.webmanifest', 'css/style.css', 'js/config.js', 'js/icons.js', 'js/core.js', 'js/art.js', 'js/member.js', 'js/pwa.js', 'js/app.js', 'img/logo.svg', 'img/icon-192.png'];
 
 self.addEventListener('install', function (e) {
@@ -14,7 +14,7 @@ self.addEventListener('activate', function (e) {
 self.addEventListener('fetch', function (e) {
   var r = e.request, u = new URL(r.url);
   if (r.method !== 'GET' || u.origin !== self.location.origin) return;
-  e.respondWith(fetch(r).then(function (res) {
+  e.respondWith(fetch(r, { cache: 'no-cache' }).then(function (res) {
     if (res && res.ok && res.type === 'basic') { var copy = res.clone(); caches.open(V).then(function (c) { c.put(r, copy); }); }
     return res;
   }).catch(function () {
