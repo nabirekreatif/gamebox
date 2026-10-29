@@ -4,6 +4,14 @@
   var K = w.KGB, $ = K.$, esc = K.esc, ic = K.ic, UI = K.UI;
   var btn = $('#pwa-btn'), deferred = null, installed = false;
 
+  /* Tanpa zoom di layar sentuh (seperti aplikasi pada umumnya): cubit dua jari dinonaktifkan; ketuk dua kali diatur lewat touch-action di CSS. Desktop tidak terpengaruh. */
+  (function noZoom() {
+    var touch = ('ontouchstart' in w) || (w.navigator.maxTouchPoints > 0);
+    if (!touch) return;
+    ['gesturestart', 'gesturechange', 'gestureend'].forEach(function (n) { document.addEventListener(n, function (e) { e.preventDefault(); }, { passive: false }); });
+    document.addEventListener('touchmove', function (e) { if (e.touches && e.touches.length > 1) e.preventDefault(); }, { passive: false });
+  })();
+
   var standalone = function () {
     try { if (w.matchMedia('(display-mode: standalone)').matches || w.matchMedia('(display-mode: fullscreen)').matches || w.matchMedia('(display-mode: minimal-ui)').matches) return true; } catch (e) { /* abaikan */ }
     return w.navigator.standalone === true;

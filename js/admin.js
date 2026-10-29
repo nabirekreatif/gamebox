@@ -78,15 +78,28 @@
       '<div class="card stack"><h3 class="small muted" style="text-transform:uppercase;letter-spacing:.08em">Admin (akun Google)</h3>' +
       (cid ? '<div id="gsi-btn" class="center" style="min-height:44px"></div><p class="tiny muted center" id="gsi-msg">Memuat tombol Google...</p>' : '<div class="alert warn">' + ic('warn') + '<div>Login Google belum aktif. Superadmin dapat mengisi <b>Google Client ID</b> di Pengaturan, lalu daftarkan email admin.</div></div>') + '</div>' +
       '<div class="card"><form id="sa-form" class="stack" autocomplete="on"><h3 class="small muted" style="text-transform:uppercase;letter-spacing:.08em">Superadmin</h3>' +
-      field('sa-u', 'Username', '<input class="in" id="sa-u" name="username" autocomplete="username" value="superadmin" required>') +
+      field('sa-u', 'Email atau username', '<input class="in" id="sa-u" name="username" type="text" inputmode="email" autocapitalize="none" autocomplete="username" placeholder="email Anda (kosongkan = superadmin)" value="' + esc(lastLogin()) + '">') +
       field('sa-p', 'Password', '<input class="in" id="sa-p" name="password" type="password" autocomplete="current-password" required>') +
       '<span class="err" id="sa-err" role="alert"></span><button class="btn primary block" type="submit">' + ic('lock') + 'Masuk</button>' +
-      '<p class="tiny muted">Lupa password? Jalankan <span class="code">resetSuperadminPassword</span> dari editor Apps Script (lihat panduan).</p></form></div></div>';
+      '<button class="btn ghost block" type="button" data-act="forgot">' + ic('mail') + 'Lupa password? Kirim kode ke email</button></form></div></div>';
     if (cid) loadGsi().then(function () {
       w.google.accounts.id.initialize({ client_id: cid, callback: function (r) { api('loginGoogle', { idToken: r.credential }).then(function (res) { if (res.success) afterLogin(res); else { fail(res); var m = $('#gsi-msg'); if (m) m.textContent = res.message; } }); } });
       w.google.accounts.id.renderButton($('#gsi-btn'), { theme: 'filled_blue', size: 'large', text: 'signin_with', shape: 'pill', width: 280 });
       var m = $('#gsi-msg'); if (m) m.textContent = 'Gunakan email yang sudah didaftarkan sebagai admin.';
     }, function () { var m = $('#gsi-msg'); if (m) m.textContent = 'Tombol Google gagal dimuat. Periksa koneksi lalu muat ulang halaman.'; });
+  }
+  function lastLogin() { try { return localStorage.getItem('kgb:lastadm') || ''; } catch (e) { return ''; } }
+  function forgotView(email) {
+    root.innerHTML = '<div class="auth-wrap"><div class="card stack"><div class="card-title">' + ic('mail') + '<h3>Lupa password</h3></div>' +
+      '<form id="fp-form" class="stack"><p class="small muted">Masukkan email superadmin. Kami kirim kode 6 angka yang berlaku 15 menit.</p>' +
+      field('fp-e', 'Email superadmin', '<input class="in" id="fp-e" type="email" inputmode="email" autocapitalize="none" autocomplete="email" value="' + esc(email || lastLogin()) + '" required>') +
+      '<span class="err" id="fp-err" role="alert"></span><button class="btn primary block" type="submit">Kirim kode</button></form>' +
+      '<form id="rp-form" class="stack" hidden><div class="alert ok" id="rp-info"></div>' +
+      field('rp-c', 'Kode 6 angka dari email', '<input class="in" id="rp-c" inputmode="numeric" autocomplete="one-time-code" maxlength="6" pattern="[0-9]{6}" required>') +
+      field('rp-n', 'Password baru', '<input class="in" id="rp-n" type="password" autocomplete="new-password" required>', 'Minimal 10 karakter, kombinasi huruf dan angka.') +
+      field('rp-k', 'Ulangi password baru', '<input class="in" id="rp-k" type="password" autocomplete="new-password" required>') +
+      '<span class="err" id="rp-err" role="alert"></span><button class="btn primary block" type="submit">Ganti password</button></form>' +
+      '<button class="btn ghost block" type="button" data-act="back-login">Kembali ke halaman masuk</button></div></div>';
   }
   function pwView(forced) {
     root.innerHTML = '<div class="auth-wrap"><div class="card stack"><div class="card-title">' + ic('key') + '<h3>' + (forced ? 'Buat password baru' : 'Ganti password') + '</h3></div>' +
@@ -108,7 +121,8 @@
   function shell() {
     root.innerHTML = '<div class="row between wrap-r" style="margin:6px 0 14px"><div><span class="eyebrow">' + ic('shield') + (Auth.isSuper() ? 'Superadmin' : 'Admin') + '</span><h2 style="margin:0">Panel Pengelola</h2></div>' +
       '<div class="row"><span class="small muted hide-m">' + esc(Auth.nama || Auth.email) + '</span><button class="btn sm" data-act="reload">' + ic('refresh') + 'Segarkan</button><button class="btn sm ghost" data-act="logout">' + ic('logout') + 'Keluar</button></div></div>' +
-      '<div class="admin-shell"><div id="a-nav"></div><div id="a-body" class="stack" style="min-width:0"></div></div>';
+      '<div class="admin-shell"><div id="a-nav"></div><div id="a-body" class="stack" style="min-width:0"></div></div>' + (K.App && K.App.footHtml ? K.App.footHtml() : '');
+    if (K.App && K.App.footSync) K.App.footSync();
     built = true;
   }
   function render() {
@@ -187,9 +201,9 @@
         (o.member ? '<dt>Pemesan</dt><dd><span class="badge gold">Member</span> ' + esc(o.customer_id || '') + '</dd>' : '') + (num(o.discount) > 0 ? '<dt>Diskon promo</dt><dd>- ' + rp(o.discount) + ' <span class="muted">(harga normal ' + rp(o.normal_price) + ')</span></dd>' : '') + (num(o.bonus_hours) > 0 ? '<dt>Bonus voucher</dt><dd>+' + num(o.bonus_hours) + ' jam gratis</dd>' : '') +
         '<dt>Mulai</dt><dd>' + esc(Time.fmt(o.start_time)) + ' ' + Time.tzLabel() + '</dd><dt>Selesai</dt><dd>' + esc(Time.fmt(o.end_time)) + ' ' + Time.tzLabel() + '</dd><dt>Request game</dt><dd>' + esc(o.selected_games || '-') + '</dd><dt>Dipesan</dt><dd>' + esc(Time.fmt(o.created_at)) + '</dd></dl>' +
         '<h4 class="mt-lg" style="margin:18px 0 8px">Dokumen</h4><div class="proof" id="pf">' + proofBox('ktp', o.ktp_file_id, 'Foto KTP') + proofBox('pay', o.payment_file_id, 'Bukti bayar') + '</div>' +
-        '<h4 style="margin:18px 0 8px">Ubah status</h4><div class="row wrap-r">' + BSTAT.filter(function (x) { return x !== o.booking_status; }).map(function (x) { return '<button class="btn sm ' + (x === 'Dibatalkan' ? 'danger' : x === 'Selesai' ? '' : 'primary') + '" data-st="' + esc(x) + '">' + esc(x) + '</button>'; }).join('') + '</div>' +
-        '<div class="grid-2" style="margin-top:18px">' + field('o-pay', 'Pembayaran', '<select class="in" id="o-pay">' + opts(PSTAT, o.payment_status) + '</select>') + field('o-note', 'Catatan admin', '<textarea class="in" id="o-note" maxlength="500" style="min-height:76px">' + esc(o.admin_notes) + '</textarea>') + '</div>' +
-        '<div class="row wrap-r" style="margin-top:14px"><button class="btn gold" data-sv>' + ic('check') + 'Simpan pembayaran &amp; catatan</button><button class="btn" data-rm>' + ic('whatsapp') + 'Kirim pengingat</button><a class="btn" href="#/struk/' + esc(o.booking_id) + '" data-go>' + ic('receipt') + 'Struk</a><button class="btn danger" data-del style="margin-left:auto">' + ic('trash') + 'Hapus</button></div>';
+        '<h4 style="margin:18px 0 8px">Ubah status</h4><div class="ord-status">' + BSTAT.filter(function (x) { return x !== o.booking_status; }).map(function (x) { return '<button class="btn sm ' + (x === 'Dibatalkan' ? 'danger' : x === 'Selesai' ? '' : 'primary') + '" data-st="' + esc(x) + '">' + esc(x) + '</button>'; }).join('') + '</div>' +
+        '<div class="ord-form">' + field('o-pay', 'Pembayaran', '<select class="in" id="o-pay">' + opts(PSTAT, o.payment_status) + '</select>') + field('o-note', 'Catatan admin', '<textarea class="in" id="o-note" maxlength="500" style="min-height:76px">' + esc(o.admin_notes) + '</textarea>') + '</div>' +
+        '<div class="ord-actions"><button class="btn gold block" data-sv>' + ic('check') + 'Simpan pembayaran &amp; catatan</button><div class="ord-acts2"><button class="btn" data-rm>' + ic('whatsapp') + 'Kirim pengingat</button><a class="btn" href="#/struk/' + esc(o.booking_id) + '" data-go>' + ic('receipt') + 'Struk</a></div><button class="btn danger-ghost block" data-del>' + ic('trash') + 'Hapus pesanan</button></div>';
     }
     draw();
     s.el.addEventListener('click', function (e) {
@@ -227,20 +241,20 @@
     b.innerHTML = '<div class="row between wrap-r"><h3>Unit Playbox</h3><button class="btn primary" data-act="unit-new">' + ic('plus') + 'Tambah unit</button></div><div class="list-card">' +
       (D.units.map(function (u) {
         var left = u.current_status === 'Sedang Disewa' && u.available_at ? ' &middot; sampai ' + esc(Time.fmtShort(u.available_at)) : '';
-        return '<div class="item"><div class="thumb"><img alt="" loading="lazy" src="' + esc(K.Art.unitImg(u)) + '" onerror="this.onerror=null;this.src=KGB.Art.unit()"></div><div class="main"><b>' + esc(u.unit_name) + (u.is_demo ? ' <span class="badge">Contoh</span>' : '') + '</b><span>' + esc(u.specs) + '</span><span>' + UI.badge(u.current_status) + left + '</span></div>' +
+        return '<div class="item"><div class="thumb"><img alt="" loading="lazy" referrerpolicy="no-referrer" src="' + esc(K.Art.unitImg(u)) + '" onerror="this.onerror=null;this.src=KGB.Art.unit()"></div><div class="main"><b>' + esc(u.unit_name) + (u.is_demo ? ' <span class="badge">Contoh</span>' : '') + '</b><span>' + esc(u.specs) + '</span><span>' + UI.badge(u.current_status) + left + '</span></div>' +
           '<div class="row wrap-r"><button class="btn xs" data-act="unit-status" data-id="' + esc(u.unit_id) + '">Status</button><button class="btn xs" data-act="unit-edit" data-id="' + esc(u.unit_id) + '">' + ic('pencil') + '</button><button class="btn xs danger" data-act="unit-del" data-id="' + esc(u.unit_id) + '" aria-label="Hapus unit">' + ic('trash') + '</button></div></div>';
       }).join('') || UI.empty('box', 'Belum ada unit.')) + '</div>';
   }
   function imageField(id, label, cur, kind) {
-    return '<div class="field"><label>' + label + '</label><div class="row wrap-r"><div class="thumb" style="width:96px;height:72px" id="' + id + '-pv">' + (cur ? '<img alt="" src="' + esc(cur) + '">' : ic('image')) + '</div><div class="stack grow" style="min-width:200px"><input class="in" id="' + id + '" value="' + esc(cur || '') + '" placeholder="Tempel alamat gambar (https://...) atau unggah" inputmode="url"><label class="btn sm" style="width:fit-content">' + ic('upload') + 'Unggah foto<input type="file" accept="image/*" hidden id="' + id + '-f" data-kind="' + kind + '"></label></div></div><span class="err" id="' + id + '-e"></span></div>';
+    return '<div class="field"><label>' + label + '</label><div class="row wrap-r"><div class="thumb" style="width:96px;height:72px" id="' + id + '-pv">' + (cur ? '<img alt="" referrerpolicy="no-referrer" src="' + esc(K.Art.norm(cur)) + '">' : ic('image')) + '</div><div class="stack grow" style="min-width:200px"><input class="in" id="' + id + '" value="' + esc(cur || '') + '" placeholder="Tempel alamat gambar (https://...) atau unggah" inputmode="url"><label class="btn sm" style="width:fit-content">' + ic('upload') + 'Unggah foto<input type="file" accept="image/*" hidden id="' + id + '-f" data-kind="' + kind + '"></label></div></div><span class="err" id="' + id + '-e"></span></div>';
   }
   function bindImage(scope, id) {
     var f = $('#' + id + '-f', scope), inp = $('#' + id, scope), pv = $('#' + id + '-pv', scope);
-    inp.addEventListener('input', function () { pv.innerHTML = inp.value ? '<img alt="" src="' + esc(inp.value) + '">' : ic('image'); });
+    inp.addEventListener('input', function () { pv.innerHTML = inp.value ? '<img alt="" referrerpolicy="no-referrer" src="' + esc(K.Art.norm(inp.value)) + '">' : ic('image'); });
     f.addEventListener('change', function () {
       var file = f.files[0]; if (!file) return; var err = $('#' + id + '-e', scope); err.textContent = 'Mengunggah...';
       imgData(file, f.getAttribute('data-kind') === 'hero' ? 1600 : (f.getAttribute('data-kind') === 'logo' ? 512 : 1000)).then(function (d) { return api('uploadAsset', { kind: f.getAttribute('data-kind'), data: d, name: file.name }); }).then(function (r) {
-        if (!r.success) { err.textContent = r.message; return; } err.textContent = ''; inp.value = r.data.url; pv.innerHTML = '<img alt="" src="' + esc(r.data.url) + '">'; UI.toast('Gambar diunggah.');
+        if (!r.success) { err.textContent = r.message; return; } err.textContent = ''; inp.value = r.data.url; pv.innerHTML = '<img alt="" referrerpolicy="no-referrer" src="' + esc(r.data.url) + '">'; UI.toast('Gambar diunggah.');
       }, function (e) { err.textContent = e.message; });
     });
   }
@@ -250,7 +264,7 @@
     s.foot.innerHTML = '<button class="btn ghost" data-no>Batal</button><button class="btn primary" data-ok>Simpan</button>'; bindImage(s.el, 'u-i');
     $('[data-no]', s.foot).onclick = function () { s.close(); };
     $('[data-ok]', s.foot).onclick = function (e) {
-      UI.busy(e.currentTarget, api('saveUnit', { unit_id: u.unit_id || '', unit_name: $('#u-n').value, specs: $('#u-s').value, image_url: $('#u-i').value.trim() })).then(function (r) { if (!r.success) return fail(r); s.close(); UI.toast(r.message); refresh(); K.App && K.App.loadPub(true); });
+      UI.busy(e.currentTarget, api('saveUnit', { unit_id: u.unit_id || '', unit_name: $('#u-n').value, specs: $('#u-s').value, image_url: K.Art.norm($('#u-i').value.trim()) })).then(function (r) { if (!r.success) return fail(r); s.close(); UI.toast(r.message); refresh(); K.App && K.App.loadPub(true); });
     };
   }
   function unitStatusForm(u) {
@@ -273,7 +287,7 @@
       (p ? '<div class="row between wrap-r"><h3>Paket sewa</h3><button class="btn primary" data-act="pkg-new">' + ic('plus') + 'Tambah paket</button></div><div class="list-card">' +
         D.packages.map(function (x) { return '<div class="item"><div class="main"><b>' + esc(x.package_name) + (x.badge_text ? ' <span class="badge gold">' + esc(x.badge_text) + '</span>' : '') + (x.is_active ? '' : ' <span class="badge bad">Nonaktif</span>') + '</b><span>' + x.duration_hours + ' jam &middot; ' + rp(x.price) + '</span></div><div class="row"><button class="btn xs" data-act="pkg-edit" data-id="' + esc(x.package_id) + '">' + ic('pencil') + '</button><button class="btn xs danger" data-act="pkg-del" data-id="' + esc(x.package_id) + '" aria-label="Hapus paket">' + ic('trash') + '</button></div></div>'; }).join('') + '</div>'
         : '<div class="row between wrap-r"><h3>Daftar game (' + D.games.length + ')</h3><button class="btn primary" data-act="game-new">' + ic('plus') + 'Tambah game</button></div><div class="list-card">' +
-        D.games.map(function (g) { return '<div class="item"><div class="thumb"><img alt="" loading="lazy" src="' + esc(K.Art.cover(g)) + '" onerror="this.onerror=null;this.src=KGB.Art.game(\'' + esc(g.title).replace(/'/g, '') + '\',\'\')"></div><div class="main"><b>' + esc(g.title) + (g.is_featured ? ' <span class="badge gold">Unggulan</span>' : '') + '</b><span>' + esc(g.genre || '-') + '</span></div><div class="row"><button class="btn xs" data-act="game-edit" data-id="' + esc(g.game_id) + '">' + ic('pencil') + '</button><button class="btn xs danger" data-act="game-del" data-id="' + esc(g.game_id) + '" aria-label="Hapus game">' + ic('trash') + '</button></div></div>'; }).join('') + '</div>');
+        D.games.map(function (g) { return '<div class="item"><div class="thumb"><img alt="" loading="lazy" referrerpolicy="no-referrer" src="' + esc(K.Art.cover(g)) + '" onerror="this.onerror=null;this.src=KGB.Art.game(\'' + esc(g.title).replace(/'/g, '') + '\',\'\')"></div><div class="main"><b>' + esc(g.title) + (g.is_featured ? ' <span class="badge gold">Unggulan</span>' : '') + '</b><span>' + esc(g.genre || '-') + '</span></div><div class="row"><button class="btn xs" data-act="game-edit" data-id="' + esc(g.game_id) + '">' + ic('pencil') + '</button><button class="btn xs danger" data-act="game-del" data-id="' + esc(g.game_id) + '" aria-label="Hapus game">' + ic('trash') + '</button></div></div>'; }).join('') + '</div>');
   }
   function simpleSheet(title, body, onOk) {
     var s = UI.sheet({ title: title, body: body }); s.foot.innerHTML = '<button class="btn ghost" data-no>Batal</button><button class="btn primary" data-ok>Simpan</button>';
@@ -292,7 +306,7 @@
     g = g || {};
     var s = simpleSheet(g.game_id ? 'Ubah game' : 'Game baru', '<div class="stack">' + field('g-t', 'Judul', '<input class="in" id="g-t" maxlength="80" value="' + esc(g.title || '') + '">') + field('g-g', 'Genre', '<input class="in" id="g-g" maxlength="40" value="' + esc(g.genre || '') + '" placeholder="mis. Action/Open World">') +
       imageField('g-c', 'Cover (opsional)', g.cover_url, 'game') + sw('g-f', g.is_featured, 'Tandai unggulan') + '</div>',
-      function () { return api('saveGame', { game_id: g.game_id || '', title: $('#g-t').value, genre: $('#g-g').value, cover_url: $('#g-c').value.trim(), is_featured: $('#g-f').checked }); });
+      function () { return api('saveGame', { game_id: g.game_id || '', title: $('#g-t').value, genre: $('#g-g').value, cover_url: K.Art.norm($('#g-c').value.trim()), is_featured: $('#g-f').checked }); });
     bindImage(s.el, 'g-c');
   }
 
@@ -304,7 +318,7 @@
     ['Kontak, alamat & sosial', [['whatsapp_admin', 'Nomor WhatsApp admin (62...)', 'text'], ['instagram_username', 'Username Instagram (tanpa @)', 'text'], ['tiktok_username', 'Username TikTok (tanpa @)', 'text'], ['location_address', 'Alamat', 'text'], ['maps_link', 'Tautan Google Maps', 'text']]],
     ['Footer', [['footer_text', 'Teks footer kiri (kosong = otomatis)', 'text'], ['footer_right', 'Teks footer kanan', 'text']]],
     ['Akun pelanggan & loyalitas', [['member_enabled', 'Fitur akun pelanggan', 'yn'], ['loyalty_enabled', 'Voucher loyalitas', 'yn'], ['loyalty_target', 'Jumlah sewa untuk 1 voucher', 'num'], ['loyalty_window_days', 'Batas waktu mengumpulkan (hari)', 'num'], ['loyalty_reward_hours', 'Hadiah voucher (jam gratis)', 'num'], ['loyalty_valid_days', 'Voucher berlaku (hari)', 'num']]],
-    ['Akses & sistem (Superadmin)', [['admin_emails', 'Email admin (pisahkan koma)', 'area', true], ['google_client_id', 'Google Client ID', 'text', true], ['timezone', 'Zona waktu (mis. Asia/Jayapura)', 'text', true]]]
+    ['Akses & sistem (Superadmin)', [['superadmin_email', 'Email superadmin (login & kode lupa password)', 'text', true], ['admin_emails', 'Email admin (pisahkan koma)', 'area', true], ['google_client_id', 'Google Client ID', 'text', true], ['timezone', 'Zona waktu (mis. Asia/Jayapura)', 'text', true]]]
   ];
   function setField(f, st, sup) {
     var lock = f[3] && !sup, v = st[f[0]] || '', id = 's-' + f[0], dis = lock ? ' disabled' : '', hint = lock ? 'Hanya Superadmin yang dapat mengubah ini.' : '';
@@ -541,6 +555,8 @@
 
   /* ================================================================== AKSI (delegasi klik) */
   var ACT = {
+    forgot: function () { forgotView(); },
+    'back-login': function () { loginView(); },
     reload: function (el) { load(true); if (tab === 'notifikasi') loadNotif(true); if (tab === 'kontak') { crm = null; loadCrm(); } if (tab === 'promo') loadMb(true); },
     logout: function () { api('logout').then(function () { }); Auth.clear(); Store.clearUser('c:u:'); D = null; built = false; NC = null; crm = null; MB = null; HS = null; files = {}; UI.toast('Anda sudah keluar.'); render(); },
     order: function (el) { orderSheet(el.getAttribute('data-id')); },
@@ -664,10 +680,22 @@
       if (e.target.id === 'crm-q') { F.crmQ = e.target.value; loadCrm().then(function () { var n = $('#crm-q'); if (n) { n.focus(); var l = n.value.length; n.setSelectionRange(l, l); } }); }
     }, 250));
     root.addEventListener('submit', function (e) {
-      var id = e.target.id; if (['sa-form', 'pw-form', 'set-form', 'nc-form', 'ne-form'].indexOf(id) === -1) return; e.preventDefault();
+      var id = e.target.id; if (['sa-form', 'pw-form', 'set-form', 'nc-form', 'ne-form', 'fp-form', 'rp-form'].indexOf(id) === -1) return; e.preventDefault();
       var btn = $('button[type=submit]', e.target);
-      if (id === 'sa-form') {
-        UI.busy(btn, api('loginSuperadmin', { username: $('#sa-u').value, password: $('#sa-p').value })).then(function (r) { if (r.success) afterLogin(r); else { $('#sa-err').textContent = r.message || 'Gagal masuk.'; $('#sa-p').value = ''; $('#sa-p').focus(); } });
+      if (id === 'fp-form') {
+        var em = $('#fp-e').value.trim();
+        UI.busy(btn, api('forgotPassword', { email: em })).then(function (r) {
+          if (!r.success) { $('#fp-err').textContent = r.message || 'Gagal mengirim kode.'; return; }
+          $('#fp-err').textContent = ''; $('#rp-info').textContent = r.message; e.target.hidden = true; $('#rp-form').hidden = false; $('#rp-form').setAttribute('data-em', em); $('#rp-c').focus();
+        });
+      } else if (id === 'rp-form') {
+        if ($('#rp-n').value !== $('#rp-k').value) { $('#rp-err').textContent = 'Konfirmasi password tidak sama.'; return; }
+        UI.busy(btn, api('resetPasswordCode', { email: e.target.getAttribute('data-em'), code: $('#rp-c').value, newPassword: $('#rp-n').value })).then(function (r) {
+          if (!r.success) { $('#rp-err').textContent = r.message || 'Gagal mengganti password.'; return; }
+          UI.toast(r.message); loginView(); var u = $('#sa-u'); if (u) u.value = e.target.getAttribute('data-em') || '';
+        });
+      } else if (id === 'sa-form') {
+        UI.busy(btn, api('loginSuperadmin', { username: $('#sa-u').value.trim() || 'superadmin', password: $('#sa-p').value })).then(function (r) { if (r.success) { try { if (/@/.test($('#sa-u').value)) localStorage.setItem('kgb:lastadm', $('#sa-u').value.trim()); } catch (x) { } afterLogin(r); } else { $('#sa-err').textContent = r.message || 'Gagal masuk.'; $('#sa-p').value = ''; $('#sa-p').focus(); } });
       } else if (id === 'pw-form') {
         var n = $('#pw-n').value; if (n !== $('#pw-c').value) { $('#pw-err').textContent = 'Konfirmasi password tidak sama.'; return; }
         UI.busy(btn, api('changeSuperadminPassword', { oldPassword: $('#pw-o').value, newPassword: n })).then(function (r) { if (!r.success) { $('#pw-err').textContent = r.message; return; } Auth.save(r.data); UI.toast(r.message); built = false; Router.go('admin/ringkasan'); render(); load(true); });

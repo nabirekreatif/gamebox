@@ -31,8 +31,14 @@
       var d = w.ICONS && w.ICONS.playbox; if (!d) return '';
       return uri('<svg xmlns="http://www.w3.org/2000/svg" viewBox="' + d.vb + '"><rect width="320" height="240" fill="#0a1226"/>' + d.b + '</svg>');
     },
-    cover: function (g) { return g.cover_url ? g.cover_url : Art.game(g.title || 'Game', g.genre); },
-    unitImg: function (u) { return u && u.image_url ? u.image_url : Art.unit(); }
+    /** Tautan Google Drive (berbagi / thumbnail / uc) diubah ke bentuk yang bisa ditampilkan sebagai gambar. */
+    norm: function (u) {
+      u = String(u || '').trim();
+      var m = /drive\.google\.com\/(?:file\/d\/|open\?id=|uc\?(?:[^#]*&)?id=|thumbnail\?(?:[^#]*&)?id=)([\w-]{20,})/.exec(u) || /lh3\.googleusercontent\.com\/d\/([\w-]{20,})/.exec(u);
+      return m ? 'https://lh3.googleusercontent.com/d/' + m[1] + '=w1000' : u;
+    },
+    cover: function (g) { return g.cover_url ? Art.norm(g.cover_url) : Art.game(g.title || 'Game', g.genre); },
+    unitImg: function (u) { return u && u.image_url ? Art.norm(u.image_url) : Art.unit(); }
   };
 
   /* ------------------------------------------------------------------ Code128 (set B) -> <svg> */

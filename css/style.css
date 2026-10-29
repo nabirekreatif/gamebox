@@ -61,7 +61,9 @@
 
 /* ---------- 2. DASAR ---------- */
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-html { -webkit-text-size-adjust: 100%; scroll-behavior: smooth; }
+html { -webkit-text-size-adjust: 100%; text-size-adjust: 100%; scroll-behavior: smooth; touch-action: manipulation; }
+body { touch-action: manipulation; -webkit-tap-highlight-color: transparent; }
+/* HP: tidak bisa dicubit/zoom seperti aplikasi biasa; huruf kolom isian 16px agar iOS tidak memperbesar layar saat mengetik */
 body {
   font-family: var(--font); font-size: 15px; line-height: 1.55; color: var(--ink); background: var(--bg); background-image: var(--bg-grad); background-attachment: fixed;
   min-height: 100vh; min-height: 100dvh; overflow-x: hidden; -webkit-font-smoothing: antialiased; text-rendering: optimizeLegibility;
@@ -552,3 +554,24 @@ html { -webkit-text-size-adjust: 100%; text-size-adjust: 100%; }
 .lic-demo { background: #b91c1c; color: #fff; font-size: 13px; line-height: 20px; text-align: center; padding: 6px 12px; }
 .lic-demo b { letter-spacing: .1em; margin-right: 6px; }
 .lic-demo button, .lic-demo a { background: none; border: 0; padding: 0; margin-left: 8px; color: #fff; font: inherit; font-weight: 800; text-decoration: underline; cursor: pointer; }
+
+
+/* ---------- Modul pesanan (admin) rapi di HP ---------- */
+.ord-status { display: grid; grid-template-columns: repeat(auto-fit, minmax(104px, 1fr)); gap: 8px; }
+.ord-status .btn { width: 100%; justify-content: center; min-height: 46px; }
+.ord-form { display: grid; gap: 14px; margin-top: 18px; }
+.ord-actions { display: grid; gap: 10px; margin-top: 16px; }
+.ord-acts2 { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.ord-actions .btn { width: 100%; justify-content: center; min-height: 48px; white-space: normal; text-align: center; }
+.btn.danger-ghost { background: transparent; border: 1px solid color-mix(in srgb, var(--bad) 55%, transparent); color: var(--bad); }
+.ord-actions .danger-ghost { margin-top: 6px; }
+@media (min-width: 700px) { .ord-form { grid-template-columns: 1fr 1fr; } .ord-actions { grid-template-columns: auto auto auto; justify-content: start; align-items: center; } .ord-actions .btn { width: auto; } .ord-acts2 { display: contents; } .ord-actions .danger-ghost { margin: 0 0 0 auto; } }
+@media (max-width: 640px) {
+  .sheet-body { padding: 14px 16px calc(24px + env(safe-area-inset-bottom)); }
+  .sheet-head h3 { font-size: 16px; overflow-wrap: anywhere; }
+  .proof { grid-template-columns: 1fr 1fr; }
+  .list-card .item .row.wrap-r { justify-content: flex-start; }
+}
+
+/* HP: huruf kolom isian 16px agar iOS tidak memperbesar layar saat mengetik (ditaruh di akhir agar tidak tertimpa) */
+@media (pointer: coarse), (max-width: 899px) { input, select, textarea, .in { font-size: 16px; } }

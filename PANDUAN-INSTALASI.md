@@ -110,7 +110,10 @@ Bila tampilan lama masih muncul: tekan **Ctrl+Shift+R**.
 ## Tahap 5 — Login pertama & keamanan
 
 1. Buka `https://USERNAME.github.io/kings-gaming-box/#/admin`.
-2. **Superadmin:** username `superadmin`, password = password sementara dari log. Anda langsung diminta **membuat password baru** (min. 10 karakter, huruf + angka).
+2. **Superadmin:** isi kolom **Email atau username** dengan email pemilik skrip (atau `superadmin`; boleh dikosongkan), password = password sementara dari log. Anda langsung diminta **membuat password baru** (min. 10 karakter, huruf + angka).
+   - **Lupa password?** Di halaman masuk tekan **Lupa password? Kirim kode ke email**, isi email superadmin, lalu masukkan **kode 6 angka** yang dikirim ke email itu (berlaku 15 menit, maksimal 3 permintaan per 15 menit) dan buat password baru. Semua sesi lama otomatis keluar.
+   - Email superadmin bisa diganti di **Pengaturan → Akses & sistem → Email superadmin**. Bila belum diisi, dipakai email pemilik skrip (Google akun yang memasang Apps Script).
+   - Setelah memperbarui `Kode.gs`: **Deploy → Manage deployments → Edit → New version → Deploy**, lalu jalankan `setupAppEnvironment` sekali lagi (aman diulang; menambah pengaturan email superadmin). Izin kirim email muncul sekali saat pertama dijalankan: setujui.
 3. **Login Google untuk admin biasa (opsional, disarankan):**
    1. <https://console.cloud.google.com> → buat project → **APIs & Services → OAuth consent screen** (External, isi nama aplikasi) → **Credentials → Create credentials → OAuth client ID → Web application**.
    2. **Authorized JavaScript origins:** `https://USERNAME.github.io` (tanpa garis miring dan tanpa nama repo).
@@ -205,13 +208,19 @@ Panel admin → **Sistem → Migrasi** (Superadmin).
 5. Tersedia juga **impor CSV** per jenis data (maks. 3.000 baris).
 6. **Cutover:** jalankan impor sekali lagi tepat sebelum pindah (menangkap pesanan baru), umumkan alamat baru, arsipkan deployment lama.
 
+## Tahap 6e — Tampilan HP, gambar, dan status unit
+
+- **Tanpa zoom:** di HP (juga setelah dipasang sebagai aplikasi/PWA) layar tidak bisa dicubit atau diperbesar, seperti aplikasi pada umumnya. Di desktop tidak berubah.
+- **Gambar game/unit/logo:** unggah langsung lewat tombol unggah (disarankan). Bila menempel tautan, tautan berbagi Google Drive (`drive.google.com/file/d/…/view`) otomatis diubah menjadi alamat gambar. File Drive harus berbagi **Siapa saja yang memiliki link**. Tautan dari halaman web biasa (bukan alamat langsung ke berkas gambar .jpg/.png) tidak bisa tampil sebagai gambar.
+- **Status unit:** halaman publik memakai status yang sama dengan dasbor. Unit *Sedang Disewa* yang jam selesainya sudah lewat tetap tampil "Sedang disewa (belum dikembalikan)" sampai admin menekan **Selesai** atau mengubah status unit ke Tersedia. Halaman publik menyegarkan data tiap 30 detik, saat berpindah halaman, dan saat tab dibuka kembali.
+
 ## Reset dari backend (tanpa lewat internet)
 
 Fungsi berikut **sengaja tidak ada di API**; hanya pemilik skrip yang bisa menjalankannya dari **editor Apps Script** (pilih fungsi → Run → baca **Execution log**).
 
 | Kebutuhan | Fungsi |
 |---|---|
-| **Lupa password superadmin** | `resetSuperadminPassword` → membuat password sementara baru di log, membuka kunci login, mengeluarkan semua sesi |
+| **Lupa password superadmin** (cara cepat: tombol *Lupa password* di halaman masuk, kode dikirim ke email) | `resetSuperadminPassword` → membuat password sementara baru di log, membuka kunci login, mengeluarkan semua sesi |
 | Tentukan password sendiri | Project Settings → Script Properties → tambah `SA_NEW_PASSWORD` = password pilihan → jalankan `setSuperadminPasswordFromProperty` (properti otomatis dihapus) |
 | Login terkunci (5× salah) | `bukaKunciSuperadmin` (atau tunggu 15 menit) |
 | Keluarkan semua sesi admin | `cabutSemuaSesi` |

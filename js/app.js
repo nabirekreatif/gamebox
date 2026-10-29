@@ -64,7 +64,7 @@
   function applyBranding() {
     var logo = S('logo_url'), bn = $('.brand');
     if (bn) {
-      bn.innerHTML = (logo ? '<img class="brand-logo" alt="" src="' + esc(logo) + '" onerror="this.outerHTML=KGB.ic(\'logo\')">' : ic('logo')) + '<span id="brand-name">' + esc(brand()) + '<small>' + esc(S('brand_tagline', 'Sewa Playbox PS4')) + '</small></span>';
+      bn.innerHTML = (logo ? '<img class="brand-logo" alt="" referrerpolicy="no-referrer" src="' + esc(Art.norm(logo)) + '" onerror="this.outerHTML=KGB.ic(\'logo\')">' : ic('logo')) + '<span id="brand-name">' + esc(brand()) + '<small>' + esc(S('brand_tagline', 'Sewa Playbox PS4')) + '</small></span>';
       bn.setAttribute('aria-label', brand() + ', beranda');
     }
     var fav = $('link[rel=icon]'); if (fav && logo) fav.setAttribute('href', logo);
@@ -135,7 +135,7 @@
   function unitState(u) {
     var now = Time.now(), av = Date.parse(u.available_at);
     if (u.current_status === 'Maintenance') return { cls: 'off', text: 'Maintenance', ok: false };
-    if (u.current_status === 'Sedang Disewa' && av > now) return { cls: 'busy', text: 'Dipakai sampai ' + Time.fmtShort(u.available_at) + ' ' + Time.tzLabel(), ok: true };
+    if (u.current_status === 'Sedang Disewa') return { cls: 'busy', text: av > now ? 'Dipakai sampai ' + Time.fmtShort(u.available_at) + ' ' + Time.tzLabel() : 'Sedang disewa (belum dikembalikan)', ok: true };   // sama dengan status di dasbor admin
     var next = pub.schedule.filter(function (s) { return s.unit_id === u.unit_id && Date.parse(s.end) > now; })[0];
     if (next && Date.parse(next.start) <= now) return { cls: 'busy', text: 'Sedang dipakai sampai ' + Time.fmtShort(next.end) + ' ' + Time.tzLabel(), ok: true };
     return { cls: 'ok', text: 'Tersedia sekarang', ok: true };
@@ -148,7 +148,7 @@
   }
   function gameCard(g, pick, on) {
     return '<' + (pick ? 'button type="button"' : 'div') + ' class="game' + (pick ? ' pick' : '') + '"' + (pick ? ' aria-pressed="' + !!on + '" data-game="' + esc(g.title) + '"' : '') + '>' +
-      '<div class="cover"><img loading="lazy" decoding="async" alt="Cover ' + esc(g.title) + '" src="' + esc(Art.cover(g)) + '" onerror="this.onerror=null;this.src=KGB.Art.game(this.alt.slice(6),\'\')"></div>' +
+      '<div class="cover"><img loading="lazy" decoding="async" referrerpolicy="no-referrer" alt="Cover ' + esc(g.title) + '" src="' + esc(Art.cover(g)) + '" onerror="this.onerror=null;this.src=KGB.Art.game(this.alt.slice(6),\'\')"></div>' +
       (g.is_featured ? '<span class="star badge gold">' + ic('star') + 'Unggulan</span>' : '') + (pick ? '<span class="tick">' + ic('check') + '</span>' : '') +
       '<div class="meta"><b>' + esc(g.title) + '</b><span>' + esc(g.genre || 'Game') + '</span></div></' + (pick ? 'button' : 'div') + '>';
   }
@@ -195,7 +195,7 @@
         '<div class="row wrap-r">' + (inM ? '<a class="btn gold" href="#/akun">' + ic('user') + 'Buka akun saya</a>' : '<a class="btn gold" href="#/akun">' + ic('user') + 'Daftar / Masuk</a><a class="btn" href="#/pesan">Pesan tanpa akun</a>') + '</div></div></div>';
     },
     units: function (s) {
-      return secHead(s) + '<div class="unit-grid">' + pub.units.map(function (u) { var st = unitState(u); return '<a class="unit" href="#/pesan//' + encodeURIComponent(u.unit_id) + '" aria-disabled="' + !st.ok + '"><div class="art"><img loading="lazy" alt="' + esc(u.unit_name) + '" src="' + esc(Art.unitImg(u)) + '" onerror="this.onerror=null;this.src=KGB.Art.unit()"></div><div><h4>' + esc(u.unit_name) + '</h4><div class="specs">' + esc(u.specs) + '</div><span class="badge ' + (st.cls === 'ok' ? 'ok' : st.cls === 'busy' ? 'warn' : 'bad') + '">' + esc(st.text) + '</span></div></a>'; }).join('') + '</div>';
+      return secHead(s) + '<div class="unit-grid">' + pub.units.map(function (u) { var st = unitState(u); return '<a class="unit" href="#/pesan//' + encodeURIComponent(u.unit_id) + '" aria-disabled="' + !st.ok + '"><div class="art"><img loading="lazy" referrerpolicy="no-referrer" alt="' + esc(u.unit_name) + '" src="' + esc(Art.unitImg(u)) + '" onerror="this.onerror=null;this.src=KGB.Art.unit()"></div><div><h4>' + esc(u.unit_name) + '</h4><div class="specs">' + esc(u.specs) + '</div><span class="badge ' + (st.cls === 'ok' ? 'ok' : st.cls === 'busy' ? 'warn' : 'bad') + '">' + esc(st.text) + '</span></div></a>'; }).join('') + '</div>';
     },
     games: function (s) {
       var genres = {}; pub.games.forEach(function (g) { if (g.genre) genres[g.genre] = (genres[g.genre] || 0) + 1; });
@@ -222,7 +222,7 @@
         '<p class="lead"><b>' + esc(S('hero_subtitle')) + '</b></p><p class="lead mt" style="margin-top:10px">' + esc(S('hero_description')) + '</p>' +
         '<div class="ctas"><a class="btn gold" href="#/pesan">' + ic('gamepad') + esc(S('hero_cta_primary', 'Pesan Sekarang')) + '</a><a class="btn" href="#/cek">' + ic('search') + esc(S('hero_cta_secondary', 'Cek Status Pesanan')) + '</a></div>' +
         '<div class="ps-row" aria-hidden="true">' + ic('psTriangle') + ic('psCircle') + ic('psCross') + ic('psSquare') + '</div>' +
-      '</div><div>' + (hero ? '<img class="hero-banner" alt="Banner ' + esc(brand()) + '" src="' + esc(hero) + '" onerror="this.replaceWith(Object.assign(document.createElement(\'div\'),{innerHTML:KGB.ic(\'playbox\',\'hero-art\')}).firstChild)">' : ic('playbox', 'hero-art')) + '</div></div></div>' +
+      '</div><div>' + (hero ? '<img class="hero-banner" referrerpolicy="no-referrer" alt="Banner ' + esc(brand()) + '" src="' + esc(Art.norm(hero)) + '" onerror="this.replaceWith(Object.assign(document.createElement(\'div\'),{innerHTML:KGB.ic(\'playbox\',\'hero-art\')}).firstChild)">' : ic('playbox', 'hero-art')) + '</div></div></div>' +
       (ann ? '<div class="announce" role="note">' + ic('megaphone') + '<span>' + esc(ann) + '</span></div>' : '') +
       (pub.offline ? '<div class="alert warn mt">' + ic('warn') + '<div>Menampilkan data bawaan karena backend belum tersambung. Isi <span class="code">API_URL</span> di <span class="code">js/config.js</span> agar pemesanan berfungsi. <a href="#/setup">Uji alamat backend</a></div></div>' : '') +
       sections().filter(function (x) { return x.show; }).map(function (x) { return '<section class="home-sec" data-sec="' + x.id + '">' + SEC[x.id](x) + '</section>'; }).join('') + footHtml();
@@ -324,7 +324,7 @@
       '<div class="card"><div class="card-title"><span class="step-num">1</span><h3>Pilih Paket</h3></div><div class="pk-grid" role="radiogroup" aria-label="Paket sewa">' + pub.packages.map(function (p) { return pkCard(p, p.package_id === B.paket, true); }).join('') + '</div><div class="field"><span class="err" id="e-paket"></span></div></div>' +
       '<div class="card"><div class="card-title"><span class="step-num">2</span><h3>Pilih Unit</h3></div><div class="unit-grid" role="radiogroup" aria-label="Unit Playbox">' + pub.units.map(function (u) {
         var st = unitState(u), off = u.current_status === 'Maintenance';
-        return '<button type="button" class="unit" role="radio" aria-checked="' + (u.unit_id === B.unit) + '" aria-disabled="' + off + '" ' + (off ? 'disabled ' : '') + 'data-unit="' + esc(u.unit_id) + '"><div class="art"><img loading="lazy" alt="" src="' + esc(Art.unitImg(u)) + '" onerror="this.onerror=null;this.src=KGB.Art.unit()"></div><div><h4>' + esc(u.unit_name) + '</h4><div class="specs">' + esc(u.specs) + '</div><span class="badge ' + (st.cls === 'ok' ? 'ok' : st.cls === 'busy' ? 'warn' : 'bad') + '">' + esc(st.text) + '</span></div></button>';
+        return '<button type="button" class="unit" role="radio" aria-checked="' + (u.unit_id === B.unit) + '" aria-disabled="' + off + '" ' + (off ? 'disabled ' : '') + 'data-unit="' + esc(u.unit_id) + '"><div class="art"><img loading="lazy" referrerpolicy="no-referrer" alt="" src="' + esc(Art.unitImg(u)) + '" onerror="this.onerror=null;this.src=KGB.Art.unit()"></div><div><h4>' + esc(u.unit_name) + '</h4><div class="specs">' + esc(u.specs) + '</div><span class="badge ' + (st.cls === 'ok' ? 'ok' : st.cls === 'busy' ? 'warn' : 'bad') + '">' + esc(st.text) + '</span></div></button>';
       }).join('') + '</div><div class="field"><span class="err" id="e-unit"></span></div></div>' +
       '<div class="card"><div class="card-title"><span class="step-num">3</span><h3>Jadwal Mulai</h3></div><div class="field"><label for="f-start">Mulai sewa (' + esc(Time.tzLabel()) + ')</label><input class="in" id="f-start" type="datetime-local" step="900" min="' + minLocal() + '" max="' + maxLocal() + '" value="' + esc(B.start) + '" required>' +
         '<span class="hint">' + (c.endMs ? 'Selesai: <b>' + esc(Time.fmt(c.endMs)) + ' ' + esc(Time.tzLabel()) + '</b> (' + esc(durLabel(c.p.duration_hours)) + (c.bonus ? ' + ' + esc(durLabel(c.bonus)) + ' gratis' : '') + ')' : 'Pilih paket dan waktu untuk melihat jam selesai.') + '</span><span class="err" id="e-start">' + esc(c.err) + '</span></div></div>' +
@@ -641,7 +641,7 @@
 
   // pulihkan data tersimpan agar halaman langsung terisi, lalu segarkan
   K.pub = pub; K.brand = brand(); try { document.documentElement.setAttribute('data-brand', K.brand); } catch (e) { } if (pub.settings && pub.settings.timezone) Time.tz = pub.settings.timezone;
-  K.App = { loadPub: loadPub, pub: function () { return pub; }, waLink: waLink, S: S, Orders: Orders, durLabel: durLabel, applyPub: applyPub, loyalty: loyalty, promoLabel: promoLabel, promoDisc: promoDisc, fmtYmd: fmtYmd, loyaltyDots: loyaltyDots, sections: sections, SEC_DEF: SEC_DEF, SEC_ORDER: SEC_ORDER, pkgById: pkgById, rerenderPesan: function () { if (B && !B.busy) renderPesan(); }, rerenderHome: function () { if ($('#home-root').dataset.ready) renderHome(); } };
+  K.App = { footHtml: footHtml, footSync: footSync, loadPub: loadPub, pub: function () { return pub; }, waLink: waLink, S: S, Orders: Orders, durLabel: durLabel, applyPub: applyPub, loyalty: loyalty, promoLabel: promoLabel, promoDisc: promoDisc, fmtYmd: fmtYmd, loyaltyDots: loyaltyDots, sections: sections, SEC_DEF: SEC_DEF, SEC_ORDER: SEC_ORDER, pkgById: pkgById, rerenderPesan: function () { if (B && !B.busy) renderPesan(); }, rerenderHome: function () { if ($('#home-root').dataset.ready) renderHome(); } };
   Router.start();
   /* Lisensi: sinkronkan footer & label DEMO begitu status lisensi diketahui (tidak mengubah tata letak). */
   if (window.NKLicense && window.NKLicense.ready) {
@@ -650,7 +650,10 @@
     K.Router.hooks.push(function () { footSync(); });
   }
   loadPub(false);
-  document.addEventListener('visibilitychange', function () { if (!document.hidden && Date.now() - (Store.get(CKEY, {}) || {}).t > 120000) loadPub(true); });
+  document.addEventListener('visibilitychange', function () { if (!document.hidden && Date.now() - (Store.get(CKEY, {}) || {}).t > 15000) loadPub(true); });
+  /* status unit selalu terbaru: segarkan saat berpindah halaman dan tiap 30 detik selama tab terbuka */
+  K.Router.hooks.push(function () { if (!document.hidden) loadPub(false); });
+  setInterval(function () { if (!document.hidden) loadPub(true); }, 30000);
   w.addEventListener('kgb:member-expired', function () { UI.toast('Sesi akun berakhir. Silakan masuk lagi.', 'warn'); if (B) { B.promo = undefined; B.voucher = false; } if (Router.cur === 'akun' || Router.cur === 'pesan') Router.render(); });
   w.addEventListener('kgb:auth-expired', function () { UI.toast('Sesi admin berakhir. Silakan masuk lagi.', 'warn'); if (Router.cur === 'admin') Router.render(); });
 })(window);
