@@ -568,7 +568,7 @@
   function loadAdmin() {
     if (K.Admin) return Promise.resolve();
     if (adminP) return adminP;
-    adminP = new Promise(function (res, rej) { var s = document.createElement('script'); s.src = 'js/admin.js'; s.onload = res; s.onerror = function () { adminP = null; rej(new Error('Modul admin gagal dimuat.')); }; document.head.appendChild(s); });
+    adminP = new Promise(function (res, rej) { var base = ''; try { var ss = document.querySelectorAll('script[src]'); for (var i = 0; i < ss.length; i++) { var mm = ss[i].src.match(/^(https?:\/\/.*\/)js\/(app|core|member|art|icons|pwa)\.js(?:\?.*)?$/); if (mm) { base = mm[1]; break; } } } catch (e) { } var s = document.createElement('script'); s.src = base + 'js/admin.js'; s.onload = res; s.onerror = function () { adminP = null; rej(new Error('Modul admin gagal dimuat.')); }; document.head.appendChild(s); });
     return adminP;
   }
 
